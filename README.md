@@ -80,6 +80,14 @@ $ adac main.adb -o main
 $ ./main
 ```
 
+Repository checks:
+
+`text
+$ rake test
+$ rake style
+$ rake check
+`
+
 The initial feature set is limited, and the implementation follows the compiler
 pipeline from the beginning.
 

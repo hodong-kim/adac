@@ -15,15 +15,18 @@ project adac is
      "src/adac/backend",
      "src/adac/diagnostics",
      "src/adac/source",
-     "src/adac/support");
+     "src/adac/support",
+     "src/adac-style");
 
   for Object_Dir use "obj";
   for Exec_Dir   use "bin";
 
-  for Main use ("adac_main.adb");
+  for Main use ("adac_main.adb",
+                "adac_style_main.adb");
 
   package Builder is
-    for Executable ("adac_main.adb") use "adac";
+    for Executable ("adac_main.adb")       use "adac";
+    for Executable ("adac_style_main.adb") use "adac-style";
   end Builder;
 
   package Compiler is

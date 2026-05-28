@@ -69,7 +69,18 @@ task :test => :build do
   end
 end
 
-task :check => :test
+task :style => :build do
+  files = FileList[
+    "src/**/*.adb",
+    "src/**/*.ads",
+    "*.gpr",
+    "Rakefile"
+  ]
+
+  sh "./bin/adac-style #{files.join(' ')}"
+end
+
+task :check => [:test, :style]
 
 task :clean do
   sh "gprclean -P adac.gpr"
