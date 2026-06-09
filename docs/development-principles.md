@@ -28,3 +28,17 @@ AI-generated code must follow the repository structure and Clair Coding Style.
 
 Development workflows should keep generated artifacts and repository state
 visible unless there is a specific reason to hide them.
+
+## Repository Conventions
+
+Command names, executable names, Rake task names, and similar repository-level
+identifiers should prefer `kebab-case` unless another form is required by the
+target language or toolchain.
+
+Examples:
+
+```text
+adac-style
+style-test
+native-test
+```

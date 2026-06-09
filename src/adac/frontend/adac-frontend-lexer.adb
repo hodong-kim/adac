@@ -55,6 +55,10 @@ package body Adac.Frontend.Lexer is
       return Tok_Null;
     end if;
 
+    if lower_text = "return" then
+      return Tok_Return;
+    end if;
+
     return Tok_Identifier;
   end classify_word;
 

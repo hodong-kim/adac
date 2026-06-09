@@ -5,6 +5,22 @@
 -- ============================================================================
 project adac is
 
+  Target_Name := external ("ADAC_TARGET",
+                           external ("TARGET", "x86_64-unknown-freebsd"));
+
+  type Target_OS_Type is ("freebsd", "linux", "darwin", "windows", "android");
+  Target_OS : Target_OS_Type :=
+    external ("ADAC_TARGET_OS", external ("OS", "freebsd"));
+
+  Build_Profile_Name :=
+    external ("ADAC_BUILD_PROFILE",
+              external ("PROFILE", external ("BUILD", "release")));
+
+  type Build_Profile_Type is ("debug", "release");
+  Build_Profile : Build_Profile_Type :=
+    external ("ADAC_BUILD_PROFILE",
+              external ("PROFILE", external ("BUILD", "release")));
+
   for Source_Dirs use
     ("src",
      "src/adac/frontend",
@@ -18,8 +34,8 @@ project adac is
      "src/adac/support",
      "src/adac-style");
 
-  for Object_Dir use "obj";
-  for Exec_Dir   use "bin";
+  for Object_Dir use "build/obj/" & Target_Name & "/" & Build_Profile_Name;
+  for Exec_Dir   use "build/bin/" & Target_Name & "/" & Build_Profile_Name;
 
   for Main use ("adac_main.adb",
                 "adac_style_main.adb");
@@ -29,14 +45,24 @@ project adac is
     for Executable ("adac_style_main.adb") use "adac-style";
   end Builder;
 
+  Ada_Common_Switches :=
+    ("-gnat2022",
+     "-Wall",
+     "-Wextra",
+     "-Werror",
+     -- Enable pragma assert and related runtime assertion checks.
+     "-gnata");
+
   package Compiler is
-    for Default_Switches ("Ada") use
-      ("-gnat2022",
-       "-Wall",
-       "-Wextra",
-       "-Werror",
-       -- Enable pragma assert and related runtime assertion checks.
-       "-gnata");
+    case Build_Profile is
+      when "debug" =>
+        for Default_Switches ("Ada") use
+          Ada_Common_Switches & ("-O0", "-g");
+
+      when "release" =>
+        for Default_Switches ("Ada") use
+          Ada_Common_Switches & ("-O2");
+    end case;
   end Compiler;
 
 end adac;

@@ -17,6 +17,7 @@ package Adac.Frontend.Tokens is
      Tok_Begin,
      Tok_End,
      Tok_Null,
+     Tok_Return,
      Tok_Identifier,
      Tok_Semicolon,
      Tok_Unknown);

@@ -28,7 +28,7 @@ package body Adac.Diagnostics is
     total_errors := total_errors + 1;
 
     Ada.Text_IO.put_line ("adac: error: "
-                          & Adac.Source.image (position)
+                          & Adac.Source.position_image (position)
                           & ": "
                           & message);
   end error;

@@ -18,6 +18,6 @@ package Adac.Source is
                           line   : Positive;
                           column : Positive) return Position;
 
-  function image (pos : Position) return String;
+  function position_image (pos : Position) return String;
 
 end Adac.Source;

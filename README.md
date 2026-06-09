@@ -15,6 +15,35 @@ style checker, and a Clair formatter.
 
 -----
 
+## Build
+
+The default build profile is `release`.
+
+```text
+$ rake info
+$ rake build
+$ rake build TARGET=x86_64-unknown-freebsd PROFILE=debug
+```
+
+Build outputs are separated by target and profile:
+
+```text
+build/obj/<target>/<profile>
+build/bin/<target>/<profile>
+```
+
+For cross compilation, pass a toolchain target triple through `TARGET`:
+
+```text
+$ rake build TARGET=x86_64-unknown-freebsd
+```
+
+`run`, `test`, `style`, and `style-test` execute the generated compiler or
+style checker, so they are available only when the selected target is compatible
+with the host architecture, OS, and ABI.
+
+-----
+
 ## Development Approach
 
 This project is developed with active AI assistance.

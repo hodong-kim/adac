@@ -19,13 +19,13 @@ package body Adac.Source is
        column => column);
   end make_position;
 
-  function image (pos : Position) return String is
+  function position_image (pos : Position) return String is
     file : constant String := Ada.Strings.Unbounded.to_string (pos.file);
   begin
     return file & ":"
                 & Adac.Support.image (pos.line)
                 & ":"
                 & Adac.Support.image (pos.column);
-  end image;
+  end position_image;
 
 end Adac.Source;
