@@ -304,6 +304,15 @@ task :test do
     expect = "#{dir}/expected.txt"
     status = "#{dir}/expected-status.txt"
 
+    next unless File.file?(input)
+
+    missing = [expect, status].reject { |path| File.file?(path) }
+
+    unless missing.empty?
+      abort "incomplete compiler test fixture #{dir}: missing " \
+            "#{missing.join(', ')}"
+    end
+
     puts "==> #{dir}"
 
     retval = system(ADAC_EXE, input, "-o", "#{dir}/main", out: actual)
