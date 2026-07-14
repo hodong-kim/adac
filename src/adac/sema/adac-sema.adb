@@ -21,6 +21,13 @@ package body Adac.Sema is
       return False;
     end if;
 
+    for statement of unit.statements loop
+      case statement.kind is
+        when Adac.AST.Null_Statement =>
+          null;
+      end case;
+    end loop;
+
     return True;
   end analyze;
 

@@ -8,6 +8,13 @@ package body Adac.IR.Builder is
 
   function build (unit : Adac.AST.Compilation_Unit) return Adac.IR.Module is
   begin
+    for statement of unit.statements loop
+      case statement.kind is
+        when Adac.AST.Null_Statement =>
+          null;
+      end case;
+    end loop;
+
     return
       (entry_name => unit.procedure_name);
   end build;

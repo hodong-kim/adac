@@ -1,0 +1,7 @@
+adac: parsing tests/multiple-null-statements/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: backend ok
+adac: diagnostics 0 error(s)
