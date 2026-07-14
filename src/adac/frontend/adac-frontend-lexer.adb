@@ -114,7 +114,6 @@ begin
           self.index := self.index + 1;
 
         elsif line(self.index) = ';' then
-          self.index := self.index + 1;
           declare
             column : constant Positive := self.index;
           begin
