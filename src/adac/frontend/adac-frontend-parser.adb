@@ -84,7 +84,7 @@ package body Adac.Frontend.Parser is
       return;
     end if;
 
-    while not self.failed and then self.current.kind /= Tok_End loop
+    while not self.failed and then self.current.kind = Tok_Null loop
       parse_statement (self);
     end loop;
   end parse_statement_sequence;
