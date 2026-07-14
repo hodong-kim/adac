@@ -16,6 +16,7 @@ package Adac.Frontend.Lexer is
   procedure open (self : in out Scanner;
                   path : String);
 
+  --  Closing a scanner that is not open is a no-op.
   procedure close (self : in out Scanner);
 
   function next_token

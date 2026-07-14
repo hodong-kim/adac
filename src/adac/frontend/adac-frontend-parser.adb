@@ -125,6 +125,16 @@ package body Adac.Frontend.Parser is
     Adac.Frontend.Lexer.close (self.scanner);
     return (ok   => not self.failed,
             unit => self.unit);
+  exception
+    when others =>
+      begin
+        Adac.Frontend.Lexer.close (self.scanner);
+      exception
+        when others =>
+          null;
+      end;
+
+      raise;
   end parse_file;
 
 end Adac.Frontend.Parser;
