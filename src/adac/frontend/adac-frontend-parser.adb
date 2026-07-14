@@ -28,7 +28,7 @@ package body Adac.Frontend.Parser is
   end advance;
 
   procedure report_expected (self     : in out Parser;
-                            expected : Token_Kind)
+                             expected : Token_Kind)
   is
     text : constant String :=
       Ada.Strings.Unbounded.to_string (self.current.text);
@@ -65,9 +65,32 @@ package body Adac.Frontend.Parser is
     return Ada.Strings.Unbounded.to_string (self.current.text);
   end current_text;
 
+  procedure parse_statement (self : in out Parser) is
+  begin
+    expect (self, Tok_Null);
+
+    if not self.failed then
+      self.unit.statements.append
+        ((kind => Adac.AST.Null_Statement));
+    end if;
+
+    expect (self, Tok_Semicolon);
+  end parse_statement;
+
+  procedure parse_statement_sequence (self : in out Parser) is
+  begin
+    if self.current.kind /= Tok_Null then
+      report_expected (self, Tok_Null);
+      return;
+    end if;
+
+    while not self.failed and then self.current.kind /= Tok_End loop
+      parse_statement (self);
+    end loop;
+  end parse_statement_sequence;
+
   procedure parse_compilation_unit (self : in out Parser) is
   begin
-
     expect (self, Tok_Procedure);
 
     if not self.failed then
@@ -78,8 +101,7 @@ package body Adac.Frontend.Parser is
     expect (self, Tok_Identifier);
     expect (self, Tok_Is);
     expect (self, Tok_Begin);
-    expect (self, Tok_Null);
-    expect (self, Tok_Semicolon);
+    parse_statement_sequence (self);
     expect (self, Tok_End);
 
     if not self.failed then
