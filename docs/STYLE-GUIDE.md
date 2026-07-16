@@ -10,6 +10,22 @@ codebase.
 
 -----
 
+## File Headers
+
+The following file-header form is recommended, but not required:
+
+```ada
+-- ============================================================================
+-- cim.gpr
+-- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
+-- SPDX-License-Identifier: 0BSD
+-- ============================================================================
+```
+
+Use the file's actual name and applicable copyright year.
+
+-----
+
 ## Indentation
 
 Use **2 spaces** for indentation. Do not use tabs.
@@ -72,8 +88,8 @@ If a declaration block aligns several type separators (`:`), additional spaces
 may be used for that alignment.
 
 ```ada
-req_text      : Ada.Strings.Unbounded.Unbounded_String;
-req_max_width : Clair.Coord := -1;
+req_name      : Ada.Strings.Unbounded.Unbounded_String;
+req_max_count : Natural := 1000;
 ```
 
 If the line exceeds 80 columns only because of a trailing comment, do not wrap
@@ -102,8 +118,8 @@ the same line.
 Avoid:
 
 ```ada
-type Font_Registry_Array is
-  array (0 .. MAX_FONTS) of Standard.Skia.Font.Handle;
+type External_Library_Handle_Table is
+  array (0 .. MAX_REGISTERED_ITEMS) of External.Library.Handle;
 ```
 
 ### Comment Placement And Wrapping
@@ -155,54 +171,60 @@ calls. The `is` placement rules apply only to subprogram bodies.
 
 Choose the wrapping form in this order:
 
-1. If the subprogram has zero or one parameter and the full specification fits
-   within 80 columns, keep it on one line.
-2. If the subprogram has two or more parameters, use a vertical parameter
-   layout even when the full specification would fit within 80 columns.
-3. Keep the subprogram name, opening parenthesis, and first parameter on the
-   first line when that line fits within 80 columns.
-4. Put each remaining parameter on its own continuation line aligned with the
-   first parameter.
-5. Within the same subprogram specification, align parameter names and type
+1. If the subprogram has two or more parameters, place the opening parenthesis
+   on the next line and use a vertical parameter layout, even when the full
+   specification would fit within 80 columns.
+2. In a wrapped parameter list, put each complete parameter declaration on its
+   own line when it fits within 80 columns.
+3. Within the same subprogram specification, align parameter names and type
    separators (`:`).
-6. Do not combine multiple parameter names before one type separator in a
+4. Do not combine multiple parameter names before one type separator in a
    wrapped subprogram specification.
-7. For a function with a wrapped parameter list, place the `return ...` clause
+5. For a function with a wrapped parameter list, place the `return ...` clause
    on a separate line aligned with the start of the declaration.
-8. If only the `return ...` clause makes a function specification too long,
+6. If only the `return ...` clause makes a function specification too long,
    move the `return` clause to the next line.
-9. For a subprogram body with an empty declarative part, keep `is` on the final
+7. For a subprogram body with an empty declarative part, keep `is` on the final
    specification line when it fits within 80 columns. For a function body with
    a separate `return ...` clause, keep `return ... is` on the same line when
    it fits.
-10. For a subprogram body with a non-empty declarative part, place `is` on a
-    separate line aligned with the subprogram keyword and `begin`.
-11. Break after the subprogram name only when the name, opening parenthesis,
-    and first parameter do not fit together on the first line.
+8. For a subprogram body with a non-empty declarative part, place `is` on a
+   separate line aligned with the subprogram keyword and `begin`.
 
 ```ada
 procedure close_file (handle : File_Handle);
 ```
 
 ```ada
-procedure update_record_state (target : in out Record_State;
-                               code   : Status_Code;
-                               flags  : Update_Flags) is
+procedure enqueue
+  (self    : in out Context;
+   item    : in Element_Type;
+   success : out Boolean);
+```
+
+```ada
+procedure update_record_state
+  (target : in out Record_State;
+   code   : Status_Code;
+   flags  : Update_Flags)
+is
 begin
   null;
 end update_record_state;
 ```
 
 ```ada
-function find_matching_record (table : Record_Table;
-                               key   : Record_Key)
+function find_matching_record
+  (table : Record_Table;
+   key   : Record_Key)
 return Record_Access;
 ```
 
 ```ada
-function make_token (kind     : Token_Kind;
-                     text     : String := "";
-                     position : Adac.Source.Position)
+function make_token
+  (kind     : Token_Kind;
+   text     : String := "";
+   position : Adac.Source.Position)
 return Token is
 begin
   null;
@@ -213,21 +235,12 @@ When the `return` clause is placed on a separate line, align `return` with the
 start of the declaration.
 
 ```ada
-function xcb_intern_atom (conn           : Connection;
-                          only_if_exists : Interfaces.C.unsigned_char;
-                          name_len       : Interfaces.C.unsigned_short;
-                          name           : System.Address)
+function xcb_intern_atom
+  (conn           : Connection;
+   only_if_exists : Interfaces.C.unsigned_char;
+   name_len       : Interfaces.C.unsigned_short;
+   name           : System.Address)
 return intern_atom_cookie_t;
-```
-
-If the first line itself would exceed 80 columns, break after the subprogram
-name.
-
-```ada
-function build_minimal_compilation_unit
-  (source_path : String;
-   unit_name   : String;
-   options     : Parse_Options) return Compilation_Unit;
 ```
 
 ### Subprogram Call Wrapping
@@ -252,11 +265,29 @@ logger.write
 
 ### Type Conversion Wrapping
 
-Do not separate a type name from the opening parenthesis (`(`) in a type
-conversion. Even when wrapping is needed, keep the type name and `(` together.
+Do not put a space between a type name and the opening parenthesis (`(`) in a
+type conversion when they appear on the same line.
 
 ```ada
 return Token_Kind(current_token.kind);
+```
+
+When a type conversion appears inside an aggregate association and the
+converted expression would make the line too long, the type name may remain on
+the association line and the converted expression may be placed on the next
+line. Align the continuation under the type conversion expression.
+
+```ada
+timeout_ts : constant Clair.Time.Timespec :=
+  (tv_sec  => Clair.Time.time_t(actual_timeout / 1000),
+   tv_nsec => Interfaces.C.long
+                ((actual_timeout rem 1000) * 1_000_000));
+```
+
+For one-line conversions, keep the type name and opening parenthesis together.
+
+```ada
+timeout_ms := Integer(remaining_ts.tv_sec) * 1000;
 ```
 
 ### Return Statements
@@ -285,6 +316,27 @@ return
   (kind     => kind,
    text     => Ada.Strings.Unbounded.to_unbounded_string (text),
    position => position);
+```
+
+### Binary Expressions
+
+When a binary expression is wrapped across multiple lines, place the operator
+at the end of the continued line.
+
+Good:
+
+```ada
+HEADER_BAR : constant String :=
+  "======================================" &
+  "======================================";
+```
+
+Avoid:
+
+```ada
+HEADER_BAR : constant String :=
+  "======================================"
+  & "======================================";
 ```
 
 ### Assignment Statements
@@ -329,17 +381,6 @@ Attributes without an argument are written directly after the object.
 ```ada
 errmsg'length
 ```
-
-### Type Conversions
-
-Do not put a space between a type name and the opening parenthesis (`(`).
-
-```ada
-z := Float(x) + y;
-```
-
-**Rationale**: `Float(x)` should read as one conversion expression, not as a
-subprogram call.
 
 ### Array Indexing
 
@@ -525,3 +566,38 @@ end if;
 
 **Rationale**: Ada does not have a `continue` statement. Early exits keep loop
 and conditional logic flatter and easier to scan.
+
+## API Comments
+
+Public API declarations should use `--!` comments when the contract,
+ownership, outputs, or return status requires clarification.
+
+API comments should be concise and should describe the public API contract, not
+the implementation. Do not document private implementation details such as
+internal reference counts, backend-specific cleanup paths, or garbage queues.
+
+Use the following fields when applicable:
+
+- `summary`
+- `contract`
+- `ownership`
+- `outputs`
+- `returns`
+- `notes`
+
+Status names and code symbols should be written using backticks, such as `OK`,
+`INVALID_STATE`, `remove`, or `NULL_HANDLE`.
+
+Prefer documenting API-level obligations and effects:
+
+- whether a context must be initialized or uninitialized;
+- whether a handle must be non-null;
+- whether ownership is transferred or consumed;
+- whether an output parameter is initialized on success or failure;
+- which status codes are expected for normal recoverable failures.
+
+Do not repeat obvious type information. Do not describe how the implementation
+achieves the behavior unless that detail is part of the API contract.
+
+For overloaded APIs with the same semantics, document the first overload unless
+the overloads differ in contract, ownership, outputs, or return behavior.
