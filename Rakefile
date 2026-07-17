@@ -299,11 +299,15 @@ task :test do
   FileList["tests/*"].each do |dir|
     next unless File.directory?(dir)
 
-    input_file      = "#{dir}/input.adb"
-    input_path_file = "#{dir}/input-path.txt"
-    actual          = "#{dir}/actual.txt"
-    expect          = "#{dir}/expected.txt"
-    status          = "#{dir}/expected-status.txt"
+    input_file          = "#{dir}/input.adb"
+    input_path_file     = "#{dir}/input-path.txt"
+    output_path         = "#{dir}/main"
+    asm_path            = "#{output_path}.s"
+    output_is_directory =
+      File.file?("#{dir}/output-is-directory.txt")
+    actual              = "#{dir}/actual.txt"
+    expect              = "#{dir}/expected.txt"
+    status              = "#{dir}/expected-status.txt"
 
     next unless File.file?(input_file) || File.file?(input_path_file)
 
@@ -330,45 +334,75 @@ task :test do
             "#{missing.join(', ')}"
     end
 
-    puts "==> #{dir}"
-
-    retval = system(ADAC_EXE, input, "-o", "#{dir}/main", out: actual)
-
-    actual_status =
-      if retval
-        "0"
-      else
-        "1"
-      end
-
     expected_status = File.read(status).strip
 
-    if actual_status != expected_status
-      message =
-        "unexpected exit status for #{dir}: " \
-        "expected #{expected_status}, " \
-        "got #{actual_status}"
-
-      abort(message)
+    if output_is_directory && expected_status == "0"
+      abort "output directory fixture must expect failure: #{dir}"
     end
 
-    sh "diff", "-u", expect, actual
+    work_files =
+      Dir.glob("#{asm_path}.tmp.*") +
+      Dir.glob("#{asm_path}.backup.*")
 
-    if expected_status == "0"
-      asm_path = "#{dir}/main.s"
-      exe_path = "#{dir}/main"
+    unless work_files.empty?
+      abort "stale backend work files for #{dir}: " \
+            "#{work_files.join(', ')}"
+    end
 
-      unless File.exist?(asm_path)
-        abort("missing assembly output for #{dir}: #{asm_path}")
+    if output_is_directory
+      rm_rf asm_path
+      mkdir_p asm_path
+    end
+
+    puts "==> #{dir}"
+
+    begin
+      retval = system(ADAC_EXE, input, "-o", output_path, out: actual)
+
+      actual_status =
+        if retval
+          "0"
+        else
+          "1"
+        end
+
+      if actual_status != expected_status
+        message =
+          "unexpected exit status for #{dir}: " \
+          "expected #{expected_status}, " \
+          "got #{actual_status}"
+
+        abort(message)
       end
 
-      sh(*(TEST_CC + ["-o", exe_path, asm_path]))
+      sh "diff", "-u", expect, actual
 
-      unless File.exist?(exe_path)
-        abort("missing executable output for #{dir}: #{exe_path}")
+      work_files =
+        Dir.glob("#{asm_path}.tmp.*") +
+        Dir.glob("#{asm_path}.backup.*")
+
+      unless work_files.empty?
+        abort "backend work files remain for #{dir}: " \
+              "#{work_files.join(', ')}"
       end
 
-      sh exe_path
+      if expected_status == "0"
+        exe_path = output_path
+
+        unless File.exist?(asm_path)
+          abort("missing assembly output for #{dir}: #{asm_path}")
+        end
+
+        sh(*(TEST_CC + ["-o", exe_path, asm_path]))
+
+        unless File.exist?(exe_path)
+          abort("missing executable output for #{dir}: #{exe_path}")
+        end
+
+        sh exe_path
+      end
+    ensure
+      rm_rf asm_path if output_is_directory
     end
   end
 end
