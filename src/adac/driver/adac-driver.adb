@@ -45,12 +45,6 @@ package body Adac.Driver is
     begin
       result := Adac.Frontend.parse_file (input_path);
     exception
-      when error : Adac.Backend.Operational_Error =>
-        Adac.Diagnostics.error
-          (Ada.Exceptions.exception_message (error));
-        finish_with_failure;
-        return;
-
       when Ada.IO_Exceptions.Name_Error |
            Ada.IO_Exceptions.Use_Error |
            Ada.IO_Exceptions.Device_Error |
@@ -87,6 +81,12 @@ package body Adac.Driver is
         return;
       end if;
     exception
+      when error : Adac.Backend.Operational_Error =>
+        Adac.Diagnostics.error
+          (Ada.Exceptions.exception_message (error));
+        finish_with_failure;
+        return;
+
       when Ada.IO_Exceptions.Name_Error |
            Ada.IO_Exceptions.Use_Error |
            Ada.IO_Exceptions.Device_Error =>
