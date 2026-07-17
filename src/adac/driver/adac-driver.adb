@@ -6,7 +6,7 @@
 
 with Ada.Command_Line;
 with Ada.Text_IO;
-
+with Ada.IO_Exceptions;
 with Adac.Frontend;
 with Adac.Sema;
 with Adac.IR;
@@ -19,6 +19,16 @@ with Ada.Strings.Unbounded;
 
 package body Adac.Driver is
 
+  procedure finish_with_failure is
+  begin
+    Ada.Text_IO.put_line
+      ("adac: diagnostics " &
+       Adac.Support.image (Adac.Diagnostics.error_count) &
+       " error(s)");
+
+    Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
+  end finish_with_failure;
+
   procedure compile_file (input_path  : String;
                           output_path : String)
   is
@@ -28,25 +38,31 @@ package body Adac.Driver is
     Adac.Diagnostics.reset;
 
     Ada.Text_IO.put_line ("adac: parsing " & input_path);
-    result := Adac.Frontend.parse_file (input_path);
+
+    begin
+      result := Adac.Frontend.parse_file (input_path);
+    exception
+      when Ada.IO_Exceptions.Name_Error |
+           Ada.IO_Exceptions.Use_Error |
+           Ada.IO_Exceptions.Device_Error |
+           Ada.IO_Exceptions.End_Error |
+           Ada.IO_Exceptions.Data_Error |
+           Ada.IO_Exceptions.Layout_Error =>
+        Adac.Diagnostics.error
+          ("unable to read input file: " & input_path);
+        finish_with_failure;
+        return;
+    end;
 
     if not result.ok then
-      Ada.Text_IO.put_line ("adac: diagnostics "
-                            & Adac.Support.image (Adac.Diagnostics.error_count)
-                            & " error(s)");
-
-      Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
+      finish_with_failure;
       return;
     end if;
 
     Ada.Text_IO.put_line ("adac: parse ok");
 
     if not Adac.Sema.analyze (result.unit) then
-      Ada.Text_IO.put_line ("adac: diagnostics "
-                            & Adac.Support.image (Adac.Diagnostics.error_count)
-                            & " error(s)");
-
-      Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
+      finish_with_failure;
       return;
     end if;
 
@@ -56,10 +72,20 @@ package body Adac.Driver is
 
     Ada.Text_IO.put_line ("adac: ir ok");
 
-    if not Adac.Backend.emit (module, output_path) then
-      Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
-      return;
-    end if;
+    begin
+      if not Adac.Backend.emit (module, output_path) then
+        Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
+        return;
+      end if;
+    exception
+      when Ada.IO_Exceptions.Name_Error |
+           Ada.IO_Exceptions.Use_Error |
+           Ada.IO_Exceptions.Device_Error =>
+        Adac.Diagnostics.error
+          ("I/O failure during backend emission: " & output_path);
+        finish_with_failure;
+        return;
+    end;
 
     Ada.Text_IO.put_line ("adac: backend ok");
     Ada.Text_IO.put_line ("adac: diagnostics "

@@ -299,12 +299,29 @@ task :test do
   FileList["tests/*"].each do |dir|
     next unless File.directory?(dir)
 
-    input  = "#{dir}/input.adb"
-    actual = "#{dir}/actual.txt"
-    expect = "#{dir}/expected.txt"
-    status = "#{dir}/expected-status.txt"
+    input_file      = "#{dir}/input.adb"
+    input_path_file = "#{dir}/input-path.txt"
+    actual          = "#{dir}/actual.txt"
+    expect          = "#{dir}/expected.txt"
+    status          = "#{dir}/expected-status.txt"
 
-    next unless File.file?(input)
+    next unless File.file?(input_file) || File.file?(input_path_file)
+
+    if File.file?(input_file) && File.file?(input_path_file)
+      abort "ambiguous compiler test fixture #{dir}: both input.adb and " \
+            "input-path.txt exist"
+    end
+
+    input =
+      if File.file?(input_path_file)
+        File.read(input_path_file).strip
+      else
+        input_file
+      end
+
+    if input.empty?
+      abort "empty input path for compiler test fixture #{dir}"
+    end
 
     missing = [expect, status].reject { |path| File.file?(path) }
 
