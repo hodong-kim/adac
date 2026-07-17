@@ -2,5 +2,6 @@ adac: parsing tests/backend-output-directory/input.adb
 adac: parse ok
 adac: sema ok
 adac: ir ok
+adac: ir entry main
 adac: error: I/O failure during backend emission: tests/backend-output-directory/main
 adac: diagnostics 1 error(s)
