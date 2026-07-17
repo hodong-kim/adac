@@ -215,7 +215,6 @@ GPR_TARGET = env_choice(
 
 GPRBUILD = command_words(ENV["GPRBUILD"] || "gprbuild")
 GPRCLEAN = command_words(ENV["GPRCLEAN"] || "gprclean")
-TEST_CC  = command_words(ENV["TEST_CC"] || ENV["CC"] || "cc")
 
 TARGET_OBJ_DIR = File.join(BUILD_ROOT, "obj", TARGET, BUILD_PROFILE)
 TARGET_BIN_DIR = File.join(BUILD_ROOT, "bin", TARGET, BUILD_PROFILE)
@@ -301,10 +300,14 @@ task :test do
 
     input_file          = "#{dir}/input.adb"
     input_path_file     = "#{dir}/input-path.txt"
-    output_path         = "#{dir}/main"
+    output_path         = "#{dir}/main#{TARGET_EXE_EXT}"
     asm_path            = "#{output_path}.s"
     output_is_directory =
       File.file?("#{dir}/output-is-directory.txt")
+    missing_toolchain    =
+      File.file?("#{dir}/missing-toolchain.txt")
+    preserve_output      =
+      File.file?("#{dir}/preserve-output.txt")
     actual              = "#{dir}/actual.txt"
     expect              = "#{dir}/expected.txt"
     status              = "#{dir}/expected-status.txt"
@@ -340,24 +343,51 @@ task :test do
       abort "output directory fixture must expect failure: #{dir}"
     end
 
+    if missing_toolchain && expected_status == "0"
+      abort "missing toolchain fixture must expect failure: #{dir}"
+    end
+
+    if preserve_output && expected_status == "0"
+      abort "preserved output fixture must expect failure: #{dir}"
+    end
+
     work_files =
       Dir.glob("#{asm_path}.tmp.*") +
-      Dir.glob("#{asm_path}.backup.*")
+      Dir.glob("#{asm_path}.backup.*") +
+      Dir.glob("#{output_path}.tmp.*") +
+      Dir.glob("#{output_path}.backup.*")
 
     unless work_files.empty?
       abort "stale backend work files for #{dir}: " \
             "#{work_files.join(', ')}"
     end
 
+    rm_rf asm_path
+    rm_rf output_path
+
     if output_is_directory
-      rm_rf asm_path
-      mkdir_p asm_path
+      mkdir_p output_path
+    elsif preserve_output
+      File.write(output_path, "previous-output\n")
+    end
+
+    compiler_environment = {}
+
+    if missing_toolchain
+      compiler_environment["ADAC_CC"] =
+        "adac-native-toolchain-does-not-exist"
     end
 
     puts "==> #{dir}"
 
     begin
-      retval = system(ADAC_EXE, input, "-o", output_path, out: actual)
+      retval =
+        system(compiler_environment,
+               ADAC_EXE,
+               input,
+               "-o",
+               output_path,
+               out: actual)
 
       actual_status =
         if retval
@@ -379,7 +409,9 @@ task :test do
 
       work_files =
         Dir.glob("#{asm_path}.tmp.*") +
-        Dir.glob("#{asm_path}.backup.*")
+        Dir.glob("#{asm_path}.backup.*") +
+        Dir.glob("#{output_path}.tmp.*") +
+        Dir.glob("#{output_path}.backup.*")
 
       unless work_files.empty?
         abort "backend work files remain for #{dir}: " \
@@ -387,22 +419,30 @@ task :test do
       end
 
       if expected_status == "0"
-        exe_path = output_path
-
         unless File.exist?(asm_path)
           abort("missing assembly output for #{dir}: #{asm_path}")
         end
 
-        sh(*(TEST_CC + ["-o", exe_path, asm_path]))
-
-        unless File.exist?(exe_path)
-          abort("missing executable output for #{dir}: #{exe_path}")
+        unless File.exist?(output_path)
+          abort("missing executable output for #{dir}: #{output_path}")
         end
 
-        sh exe_path
+        sh output_path
+      elsif preserve_output
+        preserved =
+          File.file?(output_path) &&
+          File.read(output_path) == "previous-output\n"
+
+        unless preserved
+          abort "failed compiler test replaced existing output for #{dir}: " \
+                "#{output_path}"
+        end
+      elsif !output_is_directory && File.exist?(output_path)
+        abort "failed compiler test published executable for #{dir}: " \
+              "#{output_path}"
       end
     ensure
-      rm_rf asm_path if output_is_directory
+      rm_rf output_path if output_is_directory
     end
   end
 end

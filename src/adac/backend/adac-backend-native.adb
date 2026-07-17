@@ -6,6 +6,7 @@
 
 with Ada.Characters.Latin_1;
 with Ada.Directories;
+with Ada.Environment_Variables;
 with Ada.IO_Exceptions;
 with Ada.Numerics.Discrete_Random;
 with Ada.Strings.Unbounded;
@@ -21,6 +22,7 @@ package body Adac.Backend.Native is
   package Random_Naturals is new Ada.Numerics.Discrete_Random (Natural);
 
   use type OS.File_Descriptor;
+  use type OS.String_Access;
 
   MAX_NAME_ATTEMPTS : constant := 16;
 
@@ -43,6 +45,7 @@ package body Adac.Backend.Native is
 
   procedure create_unique_file
     (prefix    : String;
+     suffix    : String;
      generator : in out Random_Naturals.Generator;
      file      : out OS.File_Descriptor;
      path      : out Unbounded.Unbounded_String)
@@ -57,7 +60,8 @@ package body Adac.Backend.Native is
                   := prefix &
                      random_suffix (generator) &
                      "." &
-                     Adac.Support.image (attempt);
+                     Adac.Support.image (attempt) &
+                     suffix;
       begin
         path := Unbounded.to_unbounded_string (candidate);
         file := OS.Create_New_File (candidate, OS.Text);
@@ -135,6 +139,75 @@ package body Adac.Backend.Native is
   begin
     OS.Delete_File (path, ignored);
   end remove_file;
+
+  procedure free_arguments (arguments : in out OS.Argument_List) is
+  begin
+    for index in arguments'Range loop
+      OS.Free (arguments(index));
+    end loop;
+  end free_arguments;
+
+  function native_compiler_name return String is
+  begin
+    if Ada.Environment_Variables.exists ("ADAC_CC") then
+      return Ada.Environment_Variables.value ("ADAC_CC");
+    end if;
+
+    return "cc";
+  end native_compiler_name;
+
+  procedure link_executable
+    (assembly_path   : String;
+     executable_path : String;
+     output_path     : String)
+  is
+    compiler_name : constant String := native_compiler_name;
+    compiler_path : OS.String_Access := null;
+  begin
+    if compiler_name'length = 0 then
+      raise Adac.Backend.Operational_Error with
+        "ADAC_CC names an empty native toolchain command";
+    end if;
+
+    compiler_path := OS.Locate_Exec_On_Path (compiler_name);
+
+    if compiler_path = null then
+      raise Adac.Backend.Operational_Error with
+        "native toolchain executable not found: " & compiler_name;
+    end if;
+
+    declare
+      arguments : OS.Argument_List (1 .. 3)
+                := [new String'("-o"),
+                    new String'(executable_path),
+                    new String'(assembly_path)];
+      return_code : Integer;
+    begin
+      OS.Normalize_Arguments (arguments);
+      return_code := OS.Spawn (compiler_path.all, arguments);
+
+      if return_code /= 0 then
+        raise Adac.Backend.Operational_Error with
+          "native toolchain failed while linking " &
+          output_path &
+          " (exit status " &
+          Adac.Support.image (return_code) &
+          ")";
+      end if;
+
+      free_arguments (arguments);
+    exception
+      when others =>
+        free_arguments (arguments);
+        raise;
+    end;
+
+    OS.Free (compiler_path);
+  exception
+    when others =>
+      OS.Free (compiler_path);
+      raise;
+  end link_executable;
 
   procedure publish_temp_file
     (temp_path  : String;
@@ -223,27 +296,54 @@ package body Adac.Backend.Native is
   is
     pragma Unreferenced (module);
 
-    final_path : constant String := output_path & ".s";
-    file       : OS.File_Descriptor := OS.Invalid_FD;
-    temp_path  : Unbounded.Unbounded_String;
-    generator  : Random_Naturals.Generator;
+    assembly_path        : constant String := output_path & ".s";
+    assembly_file        : OS.File_Descriptor := OS.Invalid_FD;
+    assembly_temp_path   : Unbounded.Unbounded_String;
+    executable_file      : OS.File_Descriptor := OS.Invalid_FD;
+    executable_temp_path : Unbounded.Unbounded_String;
+    generator            : Random_Naturals.Generator;
   begin
     Random_Naturals.reset (generator);
 
     create_unique_file
-      (final_path & ".tmp.", generator, file, temp_path);
+      (assembly_path & ".tmp.",
+       "",
+       generator,
+       assembly_file,
+       assembly_temp_path);
 
-    write_all (file, ASSEMBLY);
-    close_checked (file);
+    write_all (assembly_file, ASSEMBLY);
+    close_checked (assembly_file);
 
     publish_temp_file
-      (Unbounded.to_string (temp_path), final_path, generator);
+      (Unbounded.to_string (assembly_temp_path),
+       assembly_path,
+       generator);
+
+    create_unique_file
+      (output_path & ".tmp.",
+       ".exe",
+       generator,
+       executable_file,
+       executable_temp_path);
+    close_checked (executable_file);
+
+    link_executable
+      (assembly_path,
+       Unbounded.to_string (executable_temp_path),
+       output_path);
+
+    publish_temp_file
+      (Unbounded.to_string (executable_temp_path),
+       output_path,
+       generator);
 
     return True;
   exception
     when others =>
       begin
-        discard_temp (file, temp_path);
+        discard_temp (assembly_file, assembly_temp_path);
+        discard_temp (executable_file, executable_temp_path);
       exception
         when others =>
           null;

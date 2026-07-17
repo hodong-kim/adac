@@ -8,7 +8,11 @@ with Adac.IR;
 
 package Adac.Backend is
 
-  function emit (module      : Adac.IR.Module;
-                 output_path : String) return Boolean;
+  Operational_Error : exception;
+
+  function emit
+    (module      : Adac.IR.Module;
+     output_path : String)
+  return Boolean;
 
 end Adac.Backend;
