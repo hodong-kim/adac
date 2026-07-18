@@ -1,0 +1,3 @@
+adac: parsing tests/single-hyphen/input.adb
+adac: error: tests/single-hyphen/input.adb:3:3: expected TOK_NULL, got TOK_UNKNOWN -
+adac: diagnostics 1 error(s)

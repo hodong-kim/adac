@@ -113,6 +113,12 @@ begin
         if line(self.index) = ' ' or else line(self.index) = ASCII.HT then
           self.index := self.index + 1;
 
+        elsif line(self.index) = '-' and then
+              self.index < line'last and then
+              line(self.index + 1) = '-'
+        then
+          self.index := line'last + 1;
+
         elsif line(self.index) = ';' then
           declare
             column : constant Positive := self.index;
