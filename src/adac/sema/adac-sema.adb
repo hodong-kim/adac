@@ -4,6 +4,7 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
+with Ada.Characters.Handling;
 with Ada.Strings.Unbounded;
 with Adac.Diagnostics;
 
@@ -15,7 +16,9 @@ package body Adac.Sema is
     end_name       : constant String :=
       Ada.Strings.Unbounded.to_string (unit.end_name);
   begin
-    if procedure_name /= end_name then
+    if Ada.Characters.Handling.To_Lower (procedure_name) /=
+       Ada.Characters.Handling.To_Lower (end_name)
+    then
       Adac.Diagnostics.error
         ("procedure name and end name do not match");
       return False;
