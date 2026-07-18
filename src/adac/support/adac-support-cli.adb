@@ -38,10 +38,22 @@ package body Adac.Support.CLI is
           end if;
 
           i := i + 1;
-          opts.has_output  := True;
-          opts.output_path :=
-            Ada.Strings.Unbounded.to_unbounded_string
-              (Ada.Command_Line.argument (i));
+
+          declare
+            output_path : constant String :=
+              Ada.Command_Line.argument (i);
+          begin
+            if output_path'length = 0 or else
+               output_path(output_path'first) = '-'
+            then
+              reject (opts, "missing output path after -o");
+              return opts;
+            end if;
+
+            opts.has_output  := True;
+            opts.output_path :=
+              Ada.Strings.Unbounded.to_unbounded_string (output_path);
+          end;
         elsif arg = "--case-sensitive-identifiers" then
           opts.language_options.case_sensitive_identifiers := True;
         elsif arg'length > 0 and then arg(arg'first) = '-' then
