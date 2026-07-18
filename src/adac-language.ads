@@ -1,17 +1,13 @@
 -- ============================================================================
--- adac-sema.ads
+-- adac-language.ads
 -- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
-with Adac.AST;
-with Adac.Language;
+package Adac.Language is
 
-package Adac.Sema is
+  type Options is record
+    case_sensitive_identifiers : Boolean := False;
+  end record;
 
-  function analyze
-    (unit             : Adac.AST.Compilation_Unit;
-     language_options : Adac.Language.Options)
-  return Boolean;
-
-end Adac.Sema;
+end Adac.Language;

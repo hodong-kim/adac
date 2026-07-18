@@ -1,0 +1,4 @@
+adac: parsing tests/sema-case-sensitive-name/input.adb
+adac: parse ok
+adac: error: procedure name and end name do not match
+adac: diagnostics 1 error(s)

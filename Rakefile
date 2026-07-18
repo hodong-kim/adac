@@ -389,6 +389,7 @@ task :test do
 
     input_file          = "#{dir}/input.adb"
     input_path_file     = "#{dir}/input-path.txt"
+    arguments_file      = "#{dir}/arguments.txt"
     output_path         = "#{dir}/main#{TARGET_EXE_EXT}"
     asm_path            = "#{output_path}.s"
     output_is_directory =
@@ -419,6 +420,13 @@ task :test do
     if input.empty?
       abort "empty input path for compiler test fixture #{dir}"
     end
+
+    compiler_arguments =
+      if File.file?(arguments_file)
+        Shellwords.split(File.read(arguments_file))
+      else
+        []
+      end
 
     missing = [expect, status].reject { |path| File.file?(path) }
 
@@ -477,6 +485,7 @@ task :test do
                input,
                "-o",
                output_path,
+               *compiler_arguments,
                out: actual)
 
       actual_status =

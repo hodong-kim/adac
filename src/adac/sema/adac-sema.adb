@@ -10,15 +10,30 @@ with Adac.Diagnostics;
 
 package body Adac.Sema is
 
-  function analyze (unit : Adac.AST.Compilation_Unit) return Boolean is
+  function identifiers_match
+    (left             : String;
+     right            : String;
+     language_options : Adac.Language.Options)
+  return Boolean is
+  begin
+    if language_options.case_sensitive_identifiers then
+      return left = right;
+    end if;
+
+    return Ada.Characters.Handling.To_Lower (left) =
+           Ada.Characters.Handling.To_Lower (right);
+  end identifiers_match;
+
+  function analyze
+    (unit             : Adac.AST.Compilation_Unit;
+     language_options : Adac.Language.Options)
+  return Boolean is
     procedure_name : constant String :=
       Ada.Strings.Unbounded.to_string (unit.procedure_name);
     end_name       : constant String :=
       Ada.Strings.Unbounded.to_string (unit.end_name);
   begin
-    if Ada.Characters.Handling.To_Lower (procedure_name) /=
-       Ada.Characters.Handling.To_Lower (end_name)
-    then
+    if not identifiers_match (procedure_name, end_name, language_options) then
       Adac.Diagnostics.error
         ("procedure name and end name do not match");
       return False;

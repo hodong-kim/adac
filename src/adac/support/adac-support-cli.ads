@@ -5,14 +5,16 @@
 -- ============================================================================
 
 with Ada.Strings.Unbounded;
+with Adac.Language;
 
 package Adac.Support.CLI is
 
   type Options is record
-    has_input   : Boolean := False;
-    input_path  : Ada.Strings.Unbounded.Unbounded_String;
-    has_output  : Boolean := False;
-    output_path : Ada.Strings.Unbounded.Unbounded_String;
+    has_input        : Boolean := False;
+    input_path       : Ada.Strings.Unbounded.Unbounded_String;
+    has_output       : Boolean := False;
+    output_path      : Ada.Strings.Unbounded.Unbounded_String;
+    language_options : Adac.Language.Options;
   end record;
 
   function parse return Options;

@@ -88,14 +88,18 @@ The long-term goals of `adac` are:
 
 ## Language Options
 
-`adac` follows Ada syntax and semantic rules by default.
+`adac` follows Ada syntax and semantic rules by default. Identifiers are
+case-insensitive under the default Ada rules.
 
-Some options may be provided experimentally for specific development workflows
-or repository policies.
+Use `--case-sensitive-identifiers` to require exact case matching between
+identifiers:
 
-For example, a case-sensitive mode may be supported as an optional mode for
-codebases where case distinction is required by repository policy or selected
-workflows.
+```text
+$ adac main.adb -o main --case-sensitive-identifiers
+```
+
+This mode is a nonstandard extension intended for repository policies or
+selected development workflows.
 
 -----
 

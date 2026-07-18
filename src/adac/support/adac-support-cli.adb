@@ -37,6 +37,8 @@ package body Adac.Support.CLI is
                 Ada.Strings.Unbounded.to_unbounded_string
                   (Ada.Command_Line.argument (i));
             end if;
+          elsif arg = "--case-sensitive-identifiers" then
+            opts.language_options.case_sensitive_identifiers := True;
           end if;
         end;
 
