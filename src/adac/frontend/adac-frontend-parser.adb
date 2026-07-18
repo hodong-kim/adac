@@ -65,26 +65,52 @@ package body Adac.Frontend.Parser is
     return Ada.Strings.Unbounded.to_string (self.current.text);
   end current_text;
 
+  function starts_statement (kind : Token_Kind) return Boolean is
+  begin
+    case kind is
+      when Tok_Null | Tok_Return =>
+        return True;
+
+      when others =>
+        return False;
+    end case;
+  end starts_statement;
+
   procedure parse_statement (self : in out Parser) is
   begin
-    expect (self, Tok_Null);
+    case self.current.kind is
+      when Tok_Null =>
+        expect (self, Tok_Null);
 
-    if not self.failed then
-      self.unit.statements.append
-        (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
-    end if;
+        if not self.failed then
+          self.unit.statements.append
+            (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
+        end if;
+
+      when Tok_Return =>
+        expect (self, Tok_Return);
+
+        if not self.failed then
+          self.unit.statements.append
+            (Adac.AST.Statement'(kind => Adac.AST.Return_Statement));
+        end if;
+
+      when others =>
+        report_expected (self, Tok_Null);
+        return;
+    end case;
 
     expect (self, Tok_Semicolon);
   end parse_statement;
 
   procedure parse_statement_sequence (self : in out Parser) is
   begin
-    if self.current.kind /= Tok_Null then
+    if not starts_statement (self.current.kind) then
       report_expected (self, Tok_Null);
       return;
     end if;
 
-    while not self.failed and then self.current.kind = Tok_Null loop
+    while not self.failed and then starts_statement (self.current.kind) loop
       parse_statement (self);
     end loop;
   end parse_statement_sequence;

@@ -10,7 +10,8 @@ with Ada.Strings.Unbounded;
 package Adac.AST is
 
   type Statement_Kind is
-    (Null_Statement);
+    (Null_Statement,
+     Return_Statement);
 
   type Statement is record
     kind : Statement_Kind;

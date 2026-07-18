@@ -1,9 +1,10 @@
-adac: parsing tests/adjacent-null-statements/input.adb
+adac: parsing tests/return-statement/input.adb
 adac: parse ok
 adac: sema ok
 adac: ir ok
 adac: ir entry main
 adac: ir null
+adac: ir return
 adac: ir null
 adac: backend ok
 adac: diagnostics 0 error(s)

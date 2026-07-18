@@ -142,8 +142,8 @@ source
 
 This minimum goal has already shaped the current implementation: `adac` can
 parse the minimal program, build a small AST, run semantic checks, build a
-minimal IR module, emit native assembly for the null program, and produce an
-executable through the system toolchain.
+minimal IR module, emit native assembly for null and return statements, and
+produce an executable through the system toolchain.
 
 ---
 
@@ -192,21 +192,21 @@ The current implementation contains:
 * command-line driver
 * lexer
 * pull-based token stream
-* parser for the minimal procedure form
+* parser for the minimal procedure form with null and return statements
 * AST representation for the minimal compilation unit
 * semantic check for procedure/end name consistency
 * diagnostic subsystem
 * source position tracking
 * custom IR skeleton
 * dump backend
-* native assembly backend for the null program
+* native assembly backend for null and return statements
 * regression test infrastructure
 * positive and negative tests
 * `-o` output path support
 
-The current native backend is limited to the null program. It emits assembly for
-the null program and relies on the system toolchain to link the resulting
-executable.
+The current native backend is limited to null and return statements. It emits
+assembly for that subset and relies on the system toolchain to link the
+resulting executable.
 
 ---
 

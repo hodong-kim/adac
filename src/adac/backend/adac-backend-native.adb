@@ -38,11 +38,38 @@ package body Adac.Backend.Native is
       Adac.Build_Config.COMPILER_TARGET;
   end require_supported_target;
 
-  ASSEMBLY : constant String
-           := ".global main" & Ada.Characters.Latin_1.LF &
-              "main:" & Ada.Characters.Latin_1.LF &
-              "  xorl %eax, %eax" & Ada.Characters.Latin_1.LF &
-              "  ret" & Ada.Characters.Latin_1.LF;
+  ASSEMBLY_HEADER : constant String
+                  := ".global main" & Ada.Characters.Latin_1.LF &
+                     "main:" & Ada.Characters.Latin_1.LF;
+
+  RETURN_SEQUENCE : constant String
+                  := "  xorl %eax, %eax" & Ada.Characters.Latin_1.LF &
+                     "  ret" & Ada.Characters.Latin_1.LF;
+
+  function make_assembly (module : Adac.IR.Module) return String is
+    content    : Unbounded.Unbounded_String
+               := Unbounded.to_unbounded_string (ASSEMBLY_HEADER);
+    terminated : Boolean := False;
+  begin
+    for instruction of module.instructions loop
+      exit when terminated;
+
+      case instruction.kind is
+        when Adac.IR.Null_Instruction =>
+          null;
+
+        when Adac.IR.Return_Instruction =>
+          Unbounded.append (content, RETURN_SEQUENCE);
+          terminated := True;
+      end case;
+    end loop;
+
+    if not terminated then
+      Unbounded.append (content, RETURN_SEQUENCE);
+    end if;
+
+    return Unbounded.to_string (content);
+  end make_assembly;
 
   function random_suffix
     (generator : in out Random_Naturals.Generator)
@@ -306,8 +333,7 @@ package body Adac.Backend.Native is
      output_path : String)
   return Boolean
   is
-    pragma Unreferenced (module);
-
+    assembly             : constant String := make_assembly (module);
     assembly_path        : constant String := output_path & ".s";
     assembly_file        : OS.File_Descriptor := OS.Invalid_FD;
     assembly_temp_path   : Unbounded.Unbounded_String;
@@ -326,7 +352,7 @@ package body Adac.Backend.Native is
        assembly_file,
        assembly_temp_path);
 
-    write_all (assembly_file, ASSEMBLY);
+    write_all (assembly_file, assembly);
     close_checked (assembly_file);
 
     publish_temp_file

@@ -23,7 +23,8 @@ package body Adac.Sema is
 
     for statement of unit.statements loop
       case statement.kind is
-        when Adac.AST.Null_Statement =>
+        when Adac.AST.Null_Statement |
+             Adac.AST.Return_Statement =>
           null;
       end case;
     end loop;

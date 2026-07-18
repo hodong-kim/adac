@@ -14,6 +14,17 @@ package body Adac.Backend.Dump is
       Ada.Strings.Unbounded.to_string (module.entry_name);
   begin
     Ada.Text_IO.put_line ("adac: ir entry " & entry_name);
+
+    for instruction of module.instructions loop
+      case instruction.kind is
+        when Adac.IR.Null_Instruction =>
+          Ada.Text_IO.put_line ("adac: ir null");
+
+        when Adac.IR.Return_Instruction =>
+          Ada.Text_IO.put_line ("adac: ir return");
+      end case;
+    end loop;
+
     return True;
   end emit;
 
