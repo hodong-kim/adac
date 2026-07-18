@@ -1,0 +1,4 @@
+.global main
+main:
+  xorl %eax, %eax
+  ret

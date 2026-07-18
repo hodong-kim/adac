@@ -397,6 +397,7 @@ task :test do
       File.file?("#{dir}/missing-toolchain.txt")
     preserve_output      =
       File.file?("#{dir}/preserve-output.txt")
+    assembly_expect     = "#{dir}/expected-assembly.txt"
     actual              = "#{dir}/actual.txt"
     expect              = "#{dir}/expected.txt"
     status              = "#{dir}/expected-status.txt"
@@ -495,6 +496,14 @@ task :test do
       end
 
       sh "diff", "-u", expect, actual
+
+      if File.file?(assembly_expect)
+        unless File.file?(asm_path)
+          abort("missing assembly output for #{dir}: #{asm_path}")
+        end
+
+        sh "diff", "-u", assembly_expect, asm_path
+      end
 
       work_files =
         Dir.glob("#{asm_path}.tmp.*") +
