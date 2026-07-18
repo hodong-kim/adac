@@ -1,0 +1,2 @@
+adac: error: unexpected argument: second-input.adb
+usage: adac <file> [-o output] [--case-sensitive-identifiers]

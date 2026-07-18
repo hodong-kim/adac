@@ -1,0 +1,2 @@
+adac: error: missing output path after -o
+usage: adac <file> [-o output] [--case-sensitive-identifiers]

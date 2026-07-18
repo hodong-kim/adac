@@ -1,0 +1,2 @@
+adac: error: duplicate -o option
+usage: adac <file> [-o output] [--case-sensitive-identifiers]

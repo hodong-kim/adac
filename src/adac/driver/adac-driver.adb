@@ -22,6 +22,13 @@ with Adac.Support.CLI;
 
 package body Adac.Driver is
 
+  procedure print_usage is
+  begin
+    Ada.Text_IO.put_line
+      ("usage: adac <file> [-o output] " &
+       "[--case-sensitive-identifiers]");
+  end print_usage;
+
   procedure finish_with_failure is
   begin
     Ada.Text_IO.put_line
@@ -109,10 +116,17 @@ package body Adac.Driver is
     options : constant Adac.Support.CLI.Options :=
       Adac.Support.CLI.parse;
   begin
-    if not options.has_input then
+    if not options.valid then
       Ada.Text_IO.put_line
-        ("usage: adac <file> [-o output] " &
-         "[--case-sensitive-identifiers]");
+        ("adac: error: " &
+         Ada.Strings.Unbounded.to_string (options.error_message));
+      print_usage;
+      Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
+      return;
+    end if;
+
+    if not options.has_input then
+      print_usage;
       Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
       return;
     end if;

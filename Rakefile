@@ -390,6 +390,8 @@ task :test do
     input_file          = "#{dir}/input.adb"
     input_path_file     = "#{dir}/input-path.txt"
     arguments_file      = "#{dir}/arguments.txt"
+    omit_output_option  =
+      File.file?("#{dir}/omit-output-option.txt")
     output_path         = "#{dir}/main#{TARGET_EXE_EXT}"
     asm_path            = "#{output_path}.s"
     output_is_directory =
@@ -479,13 +481,17 @@ task :test do
     puts "==> #{dir}"
 
     begin
+      compiler_command = [ADAC_EXE, input]
+
+      unless omit_output_option
+        compiler_command.concat (["-o", output_path])
+      end
+
+      compiler_command.concat (compiler_arguments)
+
       retval =
         system(compiler_environment,
-               ADAC_EXE,
-               input,
-               "-o",
-               output_path,
-               *compiler_arguments,
+               *compiler_command,
                out: actual)
 
       actual_status =
