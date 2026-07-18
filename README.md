@@ -38,6 +38,15 @@ For cross compilation, pass a toolchain target triple through `TARGET`:
 $ rake build TARGET=x86_64-unknown-freebsd
 ```
 
+`TARGET` selects the platform where the `adac` executable itself will run.
+Rake embeds that compiler target in a generated Ada package so runtime backend
+selection cannot silently assume the build host.
+
+The current native program backend supports x86-64 FreeBSD and x86-64 Linux.
+Other compiler targets may be cross-built when a matching GNAT toolchain is
+installed, but program emission is rejected until a backend for that target is
+implemented. See `docs/target-support.md`.
+
 `run`, `test`, `style`, and `style-test` execute the generated compiler or
 style checker, so they are available only when the selected target is compatible
 with the host architecture, OS, and ABI.

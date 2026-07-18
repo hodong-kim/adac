@@ -13,6 +13,7 @@ with Ada.Strings.Unbounded;
 
 with GNAT.OS_Lib;
 
+with Adac.Build_Config;
 with Adac.Support;
 
 package body Adac.Backend.Native is
@@ -25,6 +26,17 @@ package body Adac.Backend.Native is
   use type OS.String_Access;
 
   MAX_NAME_ATTEMPTS : constant := 16;
+
+  procedure require_supported_target is
+  begin
+    if Adac.Build_Config.NATIVE_BACKEND_SUPPORTED then
+      return;
+    end if;
+
+    raise Adac.Backend.Operational_Error with
+      "native backend does not support compiler target: " &
+      Adac.Build_Config.COMPILER_TARGET;
+  end require_supported_target;
 
   ASSEMBLY : constant String
            := ".global main" & Ada.Characters.Latin_1.LF &
@@ -303,6 +315,8 @@ package body Adac.Backend.Native is
     executable_temp_path : Unbounded.Unbounded_String;
     generator            : Random_Naturals.Generator;
   begin
+    require_supported_target;
+
     Random_Naturals.reset (generator);
 
     create_unique_file

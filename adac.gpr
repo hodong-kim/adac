@@ -16,13 +16,18 @@ project adac is
     external ("ADAC_BUILD_PROFILE",
               external ("PROFILE", external ("BUILD", "release")));
 
+  Generated_Source_Dir :=
+    external ("ADAC_GENERATED_SOURCE_DIR",
+              "build/generated/" & Target_Name & "/" & Build_Profile_Name);
+
   type Build_Profile_Type is ("debug", "release");
   Build_Profile : Build_Profile_Type :=
     external ("ADAC_BUILD_PROFILE",
               external ("PROFILE", external ("BUILD", "release")));
 
   for Source_Dirs use
-    ("src",
+    (Generated_Source_Dir,
+     "src",
      "src/adac/frontend",
      "src/adac/driver",
      "src/adac/ast",
