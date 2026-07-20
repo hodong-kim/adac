@@ -34,9 +34,12 @@ The initial repository layout follows this structure.
 ```text
 adac/
   README.md
-  STYLE-GUIDE.md
   docs/
+    STYLE-GUIDE.md
+    failure-model.md
     repository-layout.md
+    roadmap.md
+    target-support.md
   src/
     adac/
       driver/
@@ -51,7 +54,7 @@ adac/
       support/
   tests/
     minimal/
-````
+```
 
 ## Package Hierarchy
 

@@ -65,7 +65,8 @@ Features are implemented through the compiler pipeline: lexer, parser, AST,
 semantic analysis, IR, and backend.
 
 Subsystem responsibilities and compiler-stage boundaries are documented in the
-repository.
+repository. The development sequence, milestone exit criteria, self-hosting
+stages, and cross-platform expansion plan are defined in `docs/roadmap.md`.
 
 -----
 
@@ -78,7 +79,7 @@ The long-term goals of `adac` are:
 - separated frontend/backend architecture
 - custom IR design
 - Wasm support
-- cross-platform support
+- cross-platform compiler and program target support
 - optional LLVM backend support
 - structure intended to support SPARK-related constraints
 - Clair style checker
@@ -171,7 +172,7 @@ produce an executable through the system toolchain.
 
 All project code must follow the Clair Coding Style.
 
-The style rules are defined by `STYLE-GUIDE.md` in the repository root.
+The style rules are defined by `docs/STYLE-GUIDE.md`.
 
 AI-generated code must follow the same style rules. Code review should also
 check whether the generated or edited code follows the Clair style.
@@ -231,22 +232,25 @@ The initial stage does not include:
 
 ## Roadmap
 
-The project starts with a limited compiler pipeline that connects the major
-compiler stages, then expands the supported Ada 2022 subset incrementally.
+Development proceeds through complete vertical slices. A language feature is
+not considered implemented until its required lexer, parser, AST, semantic
+analysis, IR, backend or runtime, diagnostics, and regression-test work is
+complete.
 
-The major development directions are:
+The major roadmap tracks are:
 
-1. minimal compiler pipeline
-2. frontend expansion
-3. semantic analysis expansion
-4. custom IR stabilization
-5. backend expansion
-6. Wasm support
-7. optional LLVM backend support
-8. self-hosting-oriented structure
-9. structure intended to support SPARK-related constraints
-10. Clair style checker
-11. Clair formatter
+1. compiler infrastructure and failure containment
+2. frontend and semantic-analysis expansion
+3. typed custom IR and native backend stabilization
+4. packages, separate compilation, and runtime support
+5. composite types, exceptions, generics, and tagged types
+6. staged self-hosting
+7. cross-platform compiler and program target support
+8. tasking, specialized annexes, SPARK-oriented structure, and developer tools
+
+The detailed milestones, dependencies, and exit criteria are defined in
+`docs/roadmap.md`. Current target terminology and support boundaries remain
+defined in `docs/target-support.md`.
 
 ---
 
