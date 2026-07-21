@@ -23,6 +23,7 @@ package body Adac.IR.Builder is
       end case;
     end loop;
 
+    Adac.IR.validate (module);
     return module;
   end build;
 

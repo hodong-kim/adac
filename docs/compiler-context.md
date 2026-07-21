@@ -287,11 +287,15 @@ prevent output publication, and report an internal compiler error.
 Validators check internal stage contracts. They do not replace parser or
 semantic checks for user input.
 
+The initial IR validator rejects a missing entry name and an empty instruction
+list before a module leaves the builder or enters the backend. Its contract and
+extension rules are defined in `ir-validation.md`.
+
 Planned validators include:
 
 - context state validator;
 - AST validator;
-- IR validator.
+- additional IR validators as typed and control-flow representations grow.
 
 A validator failure is an internal compiler contract violation. Validation must
 occur before a malformed internal representation is passed to a later stage or
@@ -315,11 +319,11 @@ compilation shall release owned resources and shall not publish partial output.
 ## Migration Sequence
 
 State shall move into the context in small, independently testable changes.
-The minimal context, diagnostic-state migration, source registry, and initial
-frontend, semantic-analysis, and backend result types are complete. The next
-planned sequence is:
+The minimal context, diagnostic-state migration, source registry, initial stage
+result types, and initial IR validator are complete. The next planned sequence
+is:
 
-1. add AST or IR validation;
+1. add AST validation and extend IR validation with each new representation;
 2. expand in-process tests as additional context-owned state is introduced;
 3. add cancellation and resource accounting when their contracts are defined.
 

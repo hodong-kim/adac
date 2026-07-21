@@ -18,6 +18,7 @@ package body Adac.Backend is
   return Emission_Result
   is
   begin
+    Adac.IR.validate (module);
     Adac.Backend.Dump.emit (module);
     Adac.Backend.Native.emit (module, output_path);
 

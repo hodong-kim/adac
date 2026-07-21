@@ -39,6 +39,7 @@ adac/
     compiler-context.md
     compiler-identifiers.md
     failure-model.md
+    ir-validation.md
     repository-layout.md
     roadmap.md
     target-support.md

@@ -28,4 +28,11 @@ package Adac.IR is
     instructions : Instruction_List;
   end record;
 
+  --! summary
+  --!   Validates one target-independent IR module.
+  --! contract
+  --!   Raises `Program_Error` when an internal module invariant is violated.
+  --!   Validation reports no source diagnostic and does not modify `module`.
+  procedure validate (value : Module);
+
 end Adac.IR;

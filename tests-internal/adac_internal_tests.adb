@@ -11,6 +11,7 @@ with Adac.Compilation;
 with Adac.Compilation.Diagnostics;
 with Adac.Compilation.Sources;
 with Adac.Frontend;
+with Adac.IR;
 with Adac.Language;
 with Adac.Sema;
 with Adac.Source;
@@ -57,6 +58,15 @@ procedure adac_internal_tests is
     when Program_Error =>
       return False;
   end accepts_file_id;
+
+  function accepts_module (module : Adac.IR.Module) return Boolean is
+  begin
+    Adac.IR.validate (module);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_module;
 
   context_a : Adac.Compilation.Context := new_context;
   context_b : Adac.Compilation.Context := new_context;
@@ -222,6 +232,33 @@ begin
            "main",
            "successful parse returned the wrong AST payload");
     end case;
+  end;
+
+  declare
+    valid_module : Adac.IR.Module;
+    empty_name   : Adac.IR.Module;
+    empty_code   : Adac.IR.Module;
+  begin
+    valid_module.entry_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+    valid_module.instructions.append
+      (Adac.IR.Instruction'(kind => Adac.IR.Null_Instruction));
+
+    empty_name.instructions.append
+      (Adac.IR.Instruction'(kind => Adac.IR.Null_Instruction));
+
+    empty_code.entry_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+
+    require
+      (accepts_module (valid_module),
+       "IR validator rejected a valid minimal module");
+    require
+      (not accepts_module (empty_name),
+       "IR validator accepted an empty entry name");
+    require
+      (not accepts_module (empty_code),
+       "IR validator accepted an empty instruction list");
   end;
 
 end adac_internal_tests;
