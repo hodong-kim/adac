@@ -206,10 +206,6 @@ Example:
 Adac.Frontend.Lexer
   -> adac-frontend-lexer.ads
   -> adac-frontend-lexer.adb
-
-Guiyom.Widget.List_View
-  -> guiyom-widget-list_view.ads
-  -> guiyom-widget-list_view.adb
 ```
 
 Directory names should prefer hyphen-separated names (`-`) when practical,
