@@ -5,9 +5,9 @@
 -- ============================================================================
 
 with Ada.Containers.Vectors;
-with Ada.Strings.Unbounded;
 
 with Adac.Source;
+with Adac.Symbols;
 
 package Adac.AST is
 
@@ -27,10 +27,10 @@ package Adac.AST is
   subtype Statement_List is Statement_Vectors.Vector;
 
   type Compilation_Unit is record
-    procedure_name : Ada.Strings.Unbounded.Unbounded_String;
-    statements     : Statement_List;
-    end_name       : Ada.Strings.Unbounded.Unbounded_String;
-    span           : Adac.Source.Span := Adac.Source.INVALID_SPAN;
+    procedure_symbol : Adac.Symbols.Symbol_ID := Adac.Symbols.INVALID_SYMBOL_ID;
+    statements       : Statement_List;
+    end_symbol       : Adac.Symbols.Symbol_ID := Adac.Symbols.INVALID_SYMBOL_ID;
+    span             : Adac.Source.Span := Adac.Source.INVALID_SPAN;
   end record;
 
   --! summary

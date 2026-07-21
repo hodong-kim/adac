@@ -7,6 +7,7 @@
 with Adac.Diagnostics;
 with Adac.Language;
 with Adac.Source;
+with Adac.Symbols;
 
 package Adac.Compilation is
 
@@ -30,6 +31,7 @@ private
     options          : Adac.Language.Options;
     diagnostic_state : Adac.Diagnostics.State;
     source_registry  : Adac.Source.Registry;
+    symbol_store     : Adac.Symbols.Store;
   end record;
 
   procedure validate (self : Context);

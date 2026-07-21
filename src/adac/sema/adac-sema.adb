@@ -4,57 +4,26 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
-with Ada.Characters.Handling;
-with Ada.Strings.Unbounded;
-
 with Adac.Compilation.Diagnostics;
-with Adac.Compilation.Sources;
-with Adac.Language;
+with Adac.Compilation.Syntax;
+with Adac.Symbols;
 
 package body Adac.Sema is
 
-  function identifiers_match
-    (left             : String;
-     right            : String;
-     language_options : Adac.Language.Options)
-  return Boolean is
-  begin
-    if language_options.case_sensitive_identifiers then
-      return left = right;
-    end if;
-
-    return Ada.Characters.Handling.To_Lower (left) =
-           Ada.Characters.Handling.To_Lower (right);
-  end identifiers_match;
+  use type Adac.Symbols.Symbol_ID;
 
   function analyze
     (context : in out Adac.Compilation.Context;
      unit    : Adac.AST.Compilation_Unit)
   return Analysis_Result is
-    language_options : constant Adac.Language.Options
-                     := Adac.Compilation.language_options (context);
   begin
-    Adac.AST.validate (unit);
-    Adac.Compilation.Sources.validate_span (context, unit.span);
+    Adac.Compilation.Syntax.validate (context, unit);
 
-    for statement of unit.statements loop
-      Adac.Compilation.Sources.validate_span (context, statement.span);
-    end loop;
-
-    declare
-      procedure_name : constant String :=
-        Ada.Strings.Unbounded.to_string (unit.procedure_name);
-      end_name       : constant String :=
-        Ada.Strings.Unbounded.to_string (unit.end_name);
-    begin
-      if not identifiers_match
-        (procedure_name, end_name, language_options)
-      then
-        Adac.Compilation.Diagnostics.error
-          (context, "procedure name and end name do not match");
-        return Analysis_Rejected;
-      end if;
-    end;
+    if unit.procedure_symbol /= unit.end_symbol then
+      Adac.Compilation.Diagnostics.error
+        (context, "procedure name and end name do not match");
+      return Analysis_Rejected;
+    end if;
 
     for statement of unit.statements loop
       case statement.kind is

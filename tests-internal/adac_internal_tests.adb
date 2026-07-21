@@ -10,17 +10,20 @@ with Adac.AST;
 with Adac.Compilation;
 with Adac.Compilation.Diagnostics;
 with Adac.Compilation.Sources;
+with Adac.Compilation.Symbols;
 with Adac.Frontend;
 with Adac.IR;
 with Adac.IR.Builder;
 with Adac.Language;
 with Adac.Sema;
 with Adac.Source;
+with Adac.Symbols;
 
 procedure adac_internal_tests is
 
   use type Adac.Source.Source_File_ID;
   use type Adac.Source.Position;
+  use type Adac.Symbols.Symbol_ID;
   use type Adac.Frontend.Parse_Status;
   use type Adac.Sema.Analysis_Result;
 
@@ -45,17 +48,18 @@ procedure adac_internal_tests is
   end require;
 
   procedure initialize_minimal_unit
-    (value          : in out Adac.AST.Compilation_Unit;
+    (context        : in out Adac.Compilation.Context;
+     value          : in out Adac.AST.Compilation_Unit;
      procedure_name : String;
      end_name       : String;
      unit_span      : Adac.Source.Span;
      statement_span : Adac.Source.Span)
   is
   begin
-    value.procedure_name :=
-      Ada.Strings.Unbounded.to_unbounded_string (procedure_name);
-    value.end_name :=
-      Ada.Strings.Unbounded.to_unbounded_string (end_name);
+    value.procedure_symbol :=
+      Adac.Compilation.Symbols.intern (context, procedure_name);
+    value.end_symbol :=
+      Adac.Compilation.Symbols.intern (context, end_name);
     value.span := unit_span;
     value.statements.append
       (Adac.AST.Statement'
@@ -104,6 +108,31 @@ procedure adac_internal_tests is
     when Program_Error =>
       return False;
   end accepts_source_registration;
+
+  function accepts_symbol_interning
+    (context  : in out Adac.Compilation.Context;
+     spelling : String)
+  return Boolean is
+    symbol : Adac.Symbols.Symbol_ID;
+  begin
+    symbol := Adac.Compilation.Symbols.intern (context, spelling);
+    return symbol /= Adac.Symbols.INVALID_SYMBOL_ID;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_symbol_interning;
+
+  function accepts_symbol
+    (context : Adac.Compilation.Context;
+     symbol  : Adac.Symbols.Symbol_ID)
+  return Boolean is
+  begin
+    Adac.Compilation.Symbols.validate_symbol (context, symbol);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_symbol;
 
   function accepts_file_id
     (context : Adac.Compilation.Context;
@@ -179,12 +208,14 @@ procedure adac_internal_tests is
   end accepts_analysis;
 
   function accepts_lowering
-    (unit : Adac.AST.Compilation_Unit) return Boolean
+    (context : Adac.Compilation.Context;
+     unit    : Adac.AST.Compilation_Unit)
+  return Boolean
   is
     module : Adac.IR.Module;
     pragma unreferenced (module);
   begin
-    module := Adac.IR.Builder.build (unit);
+    module := Adac.IR.Builder.build (context, unit);
     return True;
   exception
     when Program_Error =>
@@ -216,6 +247,9 @@ begin
     require
       (not accepts_source_registration (uninitialized),
        "default-initialized context accepted a source path");
+    require
+      (not accepts_symbol_interning (uninitialized, "main"),
+       "default-initialized context accepted a symbol");
   end;
 
   require
@@ -332,6 +366,49 @@ begin
   end;
 
   declare
+    symbol_a : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context_a, "Main");
+    symbol_a_again : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context_a, "main");
+    symbol_b : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context_b, "main");
+  begin
+    require
+      (symbol_a = symbol_a_again,
+       "case-insensitive context assigned different symbol IDs");
+    require
+      (symbol_a /= symbol_b,
+       "different contexts assigned the same owned symbol ID");
+    require
+      (Adac.Compilation.Symbols.spelling (context_a, symbol_a) = "Main",
+       "symbol store did not preserve the first spelling");
+    require
+      (Adac.Compilation.Symbols.symbol_count (context_a) = 1,
+       "case-insensitive symbol store retained a duplicate");
+    require
+      (not accepts_symbol (context_b, symbol_a),
+       "symbol store accepted a foreign symbol identifier");
+    require
+      (not accepts_symbol_interning (context_a, ""),
+       "symbol store accepted an empty spelling");
+  end;
+
+  declare
+    context : Adac.Compilation.Context := new_context (True);
+    upper   : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context, "Main");
+    lower   : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context, "main");
+  begin
+    require
+      (upper /= lower,
+       "case-sensitive context merged distinct symbol spellings");
+    require
+      (Adac.Compilation.Symbols.symbol_count (context) = 2,
+       "case-sensitive symbol count is incorrect");
+  end;
+
+  declare
     context_c : constant Adac.Compilation.Context := new_context;
   begin
     require
@@ -358,7 +435,7 @@ begin
     unit    : Adac.AST.Compilation_Unit;
   begin
     initialize_minimal_unit
-      (unit, "Main", "main", unit_span, statement_span);
+      (context, unit, "Main", "main", unit_span, statement_span);
 
     require
       (Adac.Sema.analyze (context, unit) =
@@ -382,7 +459,7 @@ begin
     unit    : Adac.AST.Compilation_Unit;
   begin
     initialize_minimal_unit
-      (unit, "Main", "main", unit_span, statement_span);
+      (context, unit, "Main", "main", unit_span, statement_span);
 
     require
       (Adac.Sema.analyze (context, unit) =
@@ -407,43 +484,54 @@ begin
       (Adac.Source.make_position (file_id, 5, 1),
        Adac.Source.make_position (file_id, 5, 5));
     valid_unit      : Adac.AST.Compilation_Unit;
-    empty_procedure : Adac.AST.Compilation_Unit;
-    empty_end       : Adac.AST.Compilation_Unit;
+    invalid_procedure : Adac.AST.Compilation_Unit;
+    invalid_end       : Adac.AST.Compilation_Unit;
     empty_body      : Adac.AST.Compilation_Unit;
     invalid_span    : Adac.AST.Compilation_Unit;
     outside_child   : Adac.AST.Compilation_Unit;
   begin
     initialize_minimal_unit
-      (valid_unit, "main", "main", unit_span, statement_span);
+      (context, valid_unit, "main", "main", unit_span, statement_span);
     initialize_minimal_unit
-      (empty_procedure, "", "main", unit_span, statement_span);
+      (context,
+       invalid_procedure,
+       "main",
+       "main",
+       unit_span,
+       statement_span);
     initialize_minimal_unit
-      (empty_end, "main", "", unit_span, statement_span);
+      (context, invalid_end, "main", "main", unit_span, statement_span);
+    invalid_procedure.procedure_symbol := Adac.Symbols.INVALID_SYMBOL_ID;
+    invalid_end.end_symbol := Adac.Symbols.INVALID_SYMBOL_ID;
 
-    empty_body.procedure_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    empty_body.end_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    empty_body.span := unit_span;
+    initialize_minimal_unit
+      (context, empty_body, "main", "main", unit_span, statement_span);
+    empty_body.statements.clear;
 
     initialize_minimal_unit
-      (invalid_span,
+      (context,
+       invalid_span,
        "main",
        "main",
        Adac.Source.INVALID_SPAN,
        statement_span);
     initialize_minimal_unit
-      (outside_child, "main", "main", unit_span, outside_span);
+      (context,
+       outside_child,
+       "main",
+       "main",
+       unit_span,
+       outside_span);
 
     require
       (accepts_unit (valid_unit),
        "AST validator rejected a valid minimal compilation unit");
     require
-      (not accepts_unit (empty_procedure),
-       "AST validator accepted an empty procedure name");
+      (not accepts_unit (invalid_procedure),
+       "AST validator accepted an invalid procedure symbol");
     require
-      (not accepts_unit (empty_end),
-       "AST validator accepted an empty end name");
+      (not accepts_unit (invalid_end),
+       "AST validator accepted an invalid end symbol");
     require
       (not accepts_unit (empty_body),
        "AST validator accepted an empty statement list");
@@ -451,7 +539,7 @@ begin
       (not accepts_unit (invalid_span),
        "AST validator accepted an invalid unit span");
     require
-      (not accepts_lowering (invalid_span),
+      (not accepts_lowering (context, invalid_span),
        "IR builder accepted an invalid AST span");
     require
       (not accepts_unit (outside_child),
@@ -470,13 +558,29 @@ begin
     statement_span : constant Adac.Source.Span := Adac.Source.make_span
       (Adac.Source.make_position (file_id, 3, 3),
        Adac.Source.make_position (file_id, 3, 7));
-    unit : Adac.AST.Compilation_Unit;
+    foreign_symbol_unit : Adac.AST.Compilation_Unit;
+    foreign_span_unit   : Adac.AST.Compilation_Unit;
   begin
     initialize_minimal_unit
-      (unit, "main", "main", unit_span, statement_span);
+      (owner_context,
+       foreign_symbol_unit,
+       "main",
+       "main",
+       unit_span,
+       statement_span);
+    initialize_minimal_unit
+      (foreign_context,
+       foreign_span_unit,
+       "main",
+       "main",
+       unit_span,
+       statement_span);
 
     require
-      (not accepts_analysis (foreign_context, unit),
+      (not accepts_analysis (foreign_context, foreign_symbol_unit),
+       "semantic analysis accepted a foreign symbol");
+    require
+      (not accepts_analysis (foreign_context, foreign_span_unit),
        "semantic analysis accepted a foreign source span");
   end;
 
@@ -495,7 +599,8 @@ begin
 
       when Adac.Frontend.Parse_Succeeded =>
         require
-          (Ada.Strings.Unbounded.to_string (result.unit.procedure_name) =
+          (Adac.Compilation.Symbols.spelling
+             (context, result.unit.procedure_symbol) =
            "main",
            "successful parse returned the wrong AST payload");
 

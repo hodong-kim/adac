@@ -4,13 +4,22 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
+with Ada.Strings.Unbounded;
+
+with Adac.Compilation.Symbols;
+with Adac.Compilation.Syntax;
+
 package body Adac.IR.Builder is
 
-  function build (unit : Adac.AST.Compilation_Unit) return Adac.IR.Module is
+  function build
+    (context : Adac.Compilation.Context;
+     unit    : Adac.AST.Compilation_Unit)
+  return Adac.IR.Module is
     module : Adac.IR.Module;
   begin
-    Adac.AST.validate (unit);
-    module.entry_name := unit.procedure_name;
+    Adac.Compilation.Syntax.validate (context, unit);
+    module.entry_name := Ada.Strings.Unbounded.to_unbounded_string
+      (Adac.Compilation.Symbols.spelling (context, unit.procedure_symbol));
 
     for statement of unit.statements loop
       case statement.kind is

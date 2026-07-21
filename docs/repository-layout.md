@@ -39,6 +39,7 @@ adac/
     ast-validation.md
     compiler-context.md
     compiler-identifiers.md
+    compiler-symbols.md
     failure-model.md
     ir-validation.md
     repository-layout.md
@@ -56,6 +57,7 @@ adac/
       wasm/
       diagnostics/
       source/
+      symbols/
       support/
   tests/
     minimal/
@@ -80,6 +82,7 @@ Adac.Backend
 Adac.Wasm
 Adac.Diagnostics
 Adac.Source
+Adac.Symbols
 Adac.Support
 ```
 
@@ -115,6 +118,9 @@ Adac.Diagnostics
 
 Adac.Source
   Source registry, source file identifiers, positions, and source spans.
+
+Adac.Symbols
+  Context-owned identifier interning and stable symbol identifiers.
 
 Adac.Support
   Small shared utilities used across the project.

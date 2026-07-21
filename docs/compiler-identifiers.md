@@ -1,9 +1,9 @@
 # Compiler Identifiers
 
 This document defines the common contract for stable identifiers owned by an
-Adac compilation context. The initial implementation covers `Source_File_ID`.
-Later identifier types shall follow the same ownership and determinism rules
-unless their subsystem documents a stricter contract.
+Adac compilation context. The initial implementation covers `Source_File_ID`
+and `Symbol_ID`. Later identifier types shall follow the same ownership and
+determinism rules unless their subsystem documents a stricter contract.
 
 ## Purpose
 
@@ -34,8 +34,9 @@ Entity_ID
 Type_ID
 ```
 
-`Source_File_ID` is implemented first. The remaining types shall be introduced
-with the stores and validators that own them.
+`Source_File_ID` and `Symbol_ID` are implemented. The remaining types shall be
+introduced with the stores and validators that own them. `Symbol_ID` identifies
+an interned name and is not interchangeable with a future semantic entity ID.
 
 ## Context Ownership
 
@@ -55,12 +56,16 @@ The ownership marker is an implementation validation aid. It shall not be
 serialized, rendered in diagnostics, hashed into persistent metadata, or used
 to determine externally visible ordering.
 
+The symbol interning, spelling, and case-policy contract is defined in
+`compiler-symbols.md`.
+
 ## Invalid State
 
 Every identifier type shall define an explicit invalid value.
 
 ```text
 INVALID_SOURCE_FILE_ID
+INVALID_SYMBOL_ID
 ```
 
 A default-initialized position may contain the invalid value until a lexer or

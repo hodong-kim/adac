@@ -12,7 +12,9 @@ package body Adac.Compilation is
     return (initialized      => True,
             options          => language_options,
             diagnostic_state => Adac.Diagnostics.create,
-            source_registry  => Adac.Source.create);
+            source_registry  => Adac.Source.create,
+            symbol_store     => Adac.Symbols.create
+              (language_options.case_sensitive_identifiers));
   end create;
 
   function language_options

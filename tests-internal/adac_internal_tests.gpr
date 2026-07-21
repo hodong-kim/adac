@@ -27,6 +27,7 @@ project Adac_Internal_Tests is
      "../src/adac/ir",
      "../src/adac/sema",
      "../src/adac/source",
+     "../src/adac/symbols",
      "../src/adac/support");
 
   for Object_Dir use

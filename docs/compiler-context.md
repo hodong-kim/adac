@@ -36,14 +36,15 @@ remain unambiguous.
 
 ## Current Implementation
 
-The context currently owns language options, diagnostic state, and a source
-file registry.
+The context currently owns language options, diagnostic state, a source file
+registry, and an interned symbol store.
 
 ```text
 Compilation.Context
   language options
   diagnostic state
   source file registry
+  symbol store
 ```
 
 The driver creates one context for each compilation and keeps it alive while the
@@ -103,6 +104,7 @@ Current context-owned state includes:
 - diagnostic state;
 - language options;
 - source file registry and source file identifiers.
+- interned identifier spellings and symbol identifiers.
 
 Planned context-owned state includes:
 
@@ -235,10 +237,11 @@ compilation must preserve deterministic externally visible ordering.
 
 ## Stable Identifiers
 
-`Source_File_ID` is the first stable identifier implemented by the compiler.
-Each identifier belongs to one source registry and contains a deterministic
-one-based index plus a runtime ownership marker. The ownership marker detects
-cross-context use but is not part of serialized or externally visible identity.
+`Source_File_ID` and `Symbol_ID` are the first stable identifiers implemented by
+the compiler. Each identifier belongs to one context-owned store and contains a
+deterministic one-based index plus a runtime ownership marker. The ownership
+marker detects cross-context use but is not part of serialized or externally
+visible identity.
 
 The source registry preserves the exact path spelling supplied to the frontend.
 Registering the same exact path again in one context returns the existing ID.
@@ -258,7 +261,6 @@ Planned identifier kinds include:
 
 ```text
 Node_ID
-Symbol_ID
 Entity_ID
 Type_ID
 ```
@@ -342,8 +344,8 @@ compilation shall release owned resources and shall not publish partial output.
 
 State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, initial stage
-result types, initial AST source spans, and initial AST and IR validators are
-complete. The next planned sequence is:
+result types, interned symbols, initial AST source spans, and initial AST and IR
+validators are complete. The next planned sequence is:
 
 1. extend AST and IR validation with each new representation;
 2. expand in-process tests as additional context-owned state is introduced;

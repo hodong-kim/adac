@@ -60,7 +60,7 @@ package body Adac.Driver is
 
     Ada.Text_IO.put_line ("adac: sema ok");
 
-    module := Adac.IR.Builder.build (unit);
+    module := Adac.IR.Builder.build (context, unit);
 
     Ada.Text_IO.put_line ("adac: ir ok");
 

@@ -8,13 +8,8 @@ package body Adac.AST is
 
   procedure validate (value : Compilation_Unit) is
   begin
-    if Ada.Strings.Unbounded.length (value.procedure_name) = 0 then
-      raise Program_Error with "Adac.AST: procedure name is empty";
-    end if;
-
-    if Ada.Strings.Unbounded.length (value.end_name) = 0 then
-      raise Program_Error with "Adac.AST: end name is empty";
-    end if;
+    Adac.Symbols.validate (value.procedure_symbol);
+    Adac.Symbols.validate (value.end_symbol);
 
     if value.statements.is_empty then
       raise Program_Error with "Adac.AST: statement list is empty";

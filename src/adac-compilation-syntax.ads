@@ -1,18 +1,16 @@
 -- ============================================================================
--- adac-ir-builder.ads
+-- adac-compilation-syntax.ads
 -- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
 with Adac.AST;
-with Adac.Compilation;
--- with Adac.IR;
 
-package Adac.IR.Builder is
+package Adac.Compilation.Syntax is
 
-  function build
-    (context : Adac.Compilation.Context;
-     unit    : Adac.AST.Compilation_Unit)
-  return Adac.IR.Module;
+  --! summary: Validate an AST and all compilation-context ownership links.
+  procedure validate
+    (self : Context;
+     unit : Adac.AST.Compilation_Unit);
 
-end Adac.IR.Builder;
+end Adac.Compilation.Syntax;

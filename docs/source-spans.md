@@ -45,11 +45,10 @@ A span borrows its source-file identity from one `Adac.Source.Registry`. It
 does not own source text, a path string, or the registry.
 
 `Adac.AST.validate` checks structural span validity and node containment.
-`Adac.Sema.analyze` additionally validates every span through the source
-registry owned by its `Adac.Compilation.Context`. Passing a structurally valid
-span from another context is an internal compiler contract violation.
-`Adac.IR.Builder.build` repeats structural validation before lowering but does
-not replace semantic-boundary ownership validation.
+`Adac.Compilation.Syntax.validate` additionally validates every span through
+the source registry owned by its `Adac.Compilation.Context`. Semantic analysis
+and IR lowering both use this context-aware boundary. Passing a structurally
+valid span from another context is an internal compiler contract violation.
 
 Validation is linear in the number of AST nodes and allocates no storage.
 Future parser resource accounting shall bound the number of nodes before this

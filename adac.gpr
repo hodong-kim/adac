@@ -36,6 +36,7 @@ project adac is
      "src/adac/backend",
      "src/adac/diagnostics",
      "src/adac/source",
+     "src/adac/symbols",
      "src/adac/support",
      "src/adac-style");
 

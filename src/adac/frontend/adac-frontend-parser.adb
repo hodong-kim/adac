@@ -9,6 +9,7 @@ with Ada.Strings.Unbounded;
 with Adac.AST;
 with Adac.Compilation.Diagnostics;
 with Adac.Compilation.Sources;
+with Adac.Compilation.Symbols;
 with Adac.Frontend.Lexer;
 with Adac.Frontend.Tokens;
 with Adac.Source;
@@ -146,8 +147,8 @@ package body Adac.Frontend.Parser is
     expect (self, context, Tok_Procedure);
 
     if not self.failed then
-      self.unit.procedure_name :=
-        Ada.Strings.Unbounded.to_unbounded_string (current_text (self));
+      self.unit.procedure_symbol :=
+        Adac.Compilation.Symbols.intern (context, current_text (self));
     end if;
 
     expect (self, context, Tok_Identifier);
@@ -157,8 +158,8 @@ package body Adac.Frontend.Parser is
     expect (self, context, Tok_End);
 
     if not self.failed then
-      self.unit.end_name :=
-        Ada.Strings.Unbounded.to_unbounded_string (current_text (self));
+      self.unit.end_symbol :=
+        Adac.Compilation.Symbols.intern (context, current_text (self));
     end if;
 
     expect (self, context, Tok_Identifier);
