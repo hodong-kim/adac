@@ -11,11 +11,11 @@ with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 
 with Adac.Backend;
+with Adac.Compilation;
 with Adac.Diagnostics;
 with Adac.Frontend;
 with Adac.IR;
 with Adac.IR.Builder;
-with Adac.Language;
 with Adac.Sema;
 with Adac.Support;
 with Adac.Support.CLI;
@@ -40,9 +40,9 @@ package body Adac.Driver is
   end finish_with_failure;
 
   procedure compile_file
-    (input_path       : String;
-     output_path      : String;
-     language_options : Adac.Language.Options)
+    (context     : Adac.Compilation.Context;
+     input_path  : String;
+     output_path : String)
   is
     result : Adac.Frontend.Parse_Result;
     module : Adac.IR.Module;
@@ -73,7 +73,10 @@ package body Adac.Driver is
 
     Ada.Text_IO.put_line ("adac: parse ok");
 
-    if not Adac.Sema.analyze (result.unit, language_options) then
+    if not Adac.Sema.analyze
+      (result.unit,
+       Adac.Compilation.language_options (context))
+    then
       finish_with_failure;
       return;
     end if;
@@ -138,8 +141,10 @@ package body Adac.Driver is
         (if options.has_output
          then Ada.Strings.Unbounded.to_string (options.output_path)
          else "a.out");
+      context : constant Adac.Compilation.Context
+              := Adac.Compilation.create (options.language_options);
     begin
-      compile_file (input_path, output_path, options.language_options);
+      compile_file (context, input_path, output_path);
     end;
   end run;
 

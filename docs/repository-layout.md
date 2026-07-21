@@ -36,6 +36,7 @@ adac/
   README.md
   docs/
     STYLE-GUIDE.md
+    compiler-context.md
     failure-model.md
     repository-layout.md
     roadmap.md
@@ -62,6 +63,7 @@ The initial major package hierarchy is:
 
 ```text
 Adac.Driver
+Adac.Compilation
 Adac.Frontend
 Adac.AST
 Adac.Sema
@@ -78,6 +80,9 @@ Responsibilities:
 ```text
 Adac.Driver
   Command-line handling, compilation pipeline execution, top-level control.
+
+Adac.Compilation
+  Per-compilation ownership, language options, and lifecycle state.
 
 Adac.Frontend
   Source input, lexer, parser, and frontend-level processing.
