@@ -25,17 +25,14 @@ package body Adac.Diagnostics is
 
   procedure error
     (self     : in out State;
-     position : Adac.Source.Position;
+     location : String;
      message  : String)
   is
   begin
     self.total_errors := self.total_errors + 1;
 
     Ada.Text_IO.put_line
-      ("adac: error: " &
-       Adac.Source.position_image (position) &
-       ": " &
-       message);
+      ("adac: error: " & location & ": " & message);
   end error;
 
   function has_error (self : State) return Boolean is

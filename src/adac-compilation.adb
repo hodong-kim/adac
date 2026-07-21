@@ -10,7 +10,8 @@ package body Adac.Compilation is
   return Context is
   begin
     return (options          => language_options,
-            diagnostic_state => Adac.Diagnostics.create);
+            diagnostic_state => Adac.Diagnostics.create,
+            source_registry  => Adac.Source.create);
   end create;
 
   function language_options

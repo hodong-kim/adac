@@ -4,8 +4,6 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
-with Adac.Source;
-
 package Adac.Diagnostics is
 
   type State is private;
@@ -19,7 +17,7 @@ package Adac.Diagnostics is
 
   procedure error
     (self     : in out State;
-     position : Adac.Source.Position;
+     location : String;
      message  : String);
 
   function has_error (self : State) return Boolean;

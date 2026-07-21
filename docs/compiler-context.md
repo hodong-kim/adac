@@ -36,12 +36,14 @@ remain unambiguous.
 
 ## Current Implementation
 
-The context currently owns language options and diagnostic state.
+The context currently owns language options, diagnostic state, and a source
+file registry.
 
 ```text
 Compilation.Context
   language options
   diagnostic state
+  source file registry
 ```
 
 The driver creates one context for each compilation and keeps it alive while the
@@ -62,9 +64,18 @@ Diagnostic rendering still writes immediately to standard output. Independent
 error counts therefore do not yet make concurrent output rendering atomic or
 ordered across threads.
 
+`Adac.Source.Registry` registers each exact source path once and assigns a
+context-local `Source_File_ID`. Positions contain the identifier rather than a
+copy of the path. The registry validates that an identifier belongs to the
+context before resolving it. The detailed identifier contract is defined in
+`compiler-identifiers.md`.
+
+The registry does not own open file handles or source text. The frontend lexer
+continues to own and close its input file while parsing.
+
 The following state remains outside the context:
 
-- source files and source text;
+- source text and open source file handles;
 - AST and semantic storage;
 - type information;
 - IR storage;
@@ -83,11 +94,11 @@ must be isolated from other compilations.
 Current context-owned state includes:
 
 - diagnostic state;
-- language options.
+- language options;
+- source file registry and source file identifiers.
 
 Planned context-owned state includes:
 
-- source file registry;
 - interned identifiers;
 - AST storage;
 - semantic entities and type information;
@@ -213,34 +224,31 @@ compilation must preserve deterministic externally visible ordering.
 
 ## Stable Identifiers
 
-Stable identifiers will be introduced incrementally. Planned identifier kinds
-include:
+`Source_File_ID` is the first stable identifier implemented by the compiler.
+Each identifier belongs to one source registry and contains a deterministic
+one-based index plus a runtime ownership marker. The ownership marker detects
+cross-context use but is not part of serialized or externally visible identity.
+
+The source registry preserves the exact path spelling supplied to the frontend.
+Registering the same exact path again in one context returns the existing ID.
+Path canonicalization, symlink resolution, and file-system case folding are not
+performed implicitly.
+
+Positions now store `Source_File_ID`, line, and column. Diagnostic rendering
+resolves the path through the owning context. Passing an invalid, out-of-range,
+or foreign identifier to a registry is an internal compiler contract violation.
+
+Planned identifier kinds include:
 
 ```text
-Source_File_ID
 Node_ID
 Symbol_ID
 Entity_ID
 Type_ID
 ```
 
-Each identifier kind shall be a distinct type. Different identifier kinds shall
-not be implicitly interchangeable.
-
-An identifier shall have an explicit invalid state. Valid identifiers shall
-refer only to storage owned by the context that created them.
-
-Identifier allocation shall be deterministic for identical compiler inputs and
-options. Allocation order shall not depend on hash iteration order or unrelated
-parallel scheduling.
-
-Identifier creation shall check overflow and resource limits. External callers
-shall not be able to manufacture arbitrary valid identifiers when encapsulation
-can prevent it.
-
-`Source_File_ID` is the preferred first identifier. It will allow positions and
-spans to reference a context-owned source registry instead of copying a file
-path into every token or node.
+The common identifier rules, ownership checks, determinism requirements, and
+serialization boundary are defined in `compiler-identifiers.md`.
 
 ## Result Types
 
@@ -289,14 +297,13 @@ compilation shall release owned resources and shall not publish partial output.
 ## Migration Sequence
 
 State shall move into the context in small, independently testable changes.
-The minimal context and diagnostic-state migration are complete. The next
-planned sequence is:
+The minimal context, diagnostic-state migration, and source registry are
+complete. The next planned sequence is:
 
-1. add a source registry and `Source_File_ID`;
-2. introduce stage-specific result types;
-3. add AST or IR validation;
-4. expand in-process tests as additional context-owned state is introduced;
-5. add cancellation and resource accounting when their contracts are defined.
+1. introduce stage-specific result types;
+2. add AST or IR validation;
+3. expand in-process tests as additional context-owned state is introduced;
+4. add cancellation and resource accounting when their contracts are defined.
 
 The sequence may change when implementation constraints require it, but each
 change shall preserve existing frontend, AST, semantic, IR, backend, failure,
@@ -312,4 +319,18 @@ The diagnostic migration is complete when:
 - diagnostics from one context do not change another context's error count;
 - existing compiler diagnostic text and exit behavior remain unchanged;
 - no package-level mutable diagnostic state remains;
+- repository checks pass.
+
+## Source Registry Completion Criteria
+
+The source registry migration is complete when:
+
+- every compilation context owns an independent source registry;
+- every registered path receives a context-local `Source_File_ID`;
+- re-registering the same exact path returns the existing identifier;
+- positions store source file identifiers instead of copied paths;
+- diagnostics resolve positions through the owning context;
+- invalid and cross-context identifiers are rejected as contract violations;
+- existing compiler diagnostic text and exit behavior remain unchanged;
+- in-process tests verify source registry isolation;
 - repository checks pass.

@@ -8,13 +8,18 @@ with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 
 with Adac.Frontend.Tokens;
+with Adac.Source;
 
 package Adac.Frontend.Lexer is
 
   type Scanner is limited private;
 
-  procedure open (self : in out Scanner;
-                  path : String);
+  --! summary: Open a registered source file for tokenization.
+  --! contract: The scanner must be closed and the file ID must be valid.
+  procedure open
+    (self    : in out Scanner;
+     path    : String;
+     file_id : Adac.Source.Source_File_ID);
 
   --  Closing a scanner that is not open is a no-op.
   procedure close (self : in out Scanner);
@@ -31,8 +36,8 @@ private
     index       : Natural := 0;
     end_of_line : Boolean := True;
 
-    file_name : Ada.Strings.Unbounded.Unbounded_String;
-    line_no   : Positive := 1;
+    file_id : Adac.Source.Source_File_ID := Adac.Source.INVALID_SOURCE_FILE_ID;
+    line_no : Positive := 1;
   end record;
 
 end Adac.Frontend.Lexer;

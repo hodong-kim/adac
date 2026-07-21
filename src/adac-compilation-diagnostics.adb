@@ -4,6 +4,7 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
+with Adac.Compilation.Sources;
 with Adac.Diagnostics;
 
 package body Adac.Compilation.Diagnostics is
@@ -22,7 +23,10 @@ package body Adac.Compilation.Diagnostics is
      message  : String)
   is
   begin
-    Adac.Diagnostics.error (self.diagnostic_state, position, message);
+    Adac.Diagnostics.error
+      (self.diagnostic_state,
+       Adac.Compilation.Sources.position_image (self, position),
+       message);
   end error;
 
   function has_error (self : Context) return Boolean is

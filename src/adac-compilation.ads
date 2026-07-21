@@ -6,6 +6,7 @@
 
 with Adac.Diagnostics;
 with Adac.Language;
+with Adac.Source;
 
 package Adac.Compilation is
 
@@ -27,6 +28,7 @@ private
   type Context is limited record
     options          : Adac.Language.Options;
     diagnostic_state : Adac.Diagnostics.State;
+    source_registry  : Adac.Source.Registry;
   end record;
 
 end Adac.Compilation;

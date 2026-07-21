@@ -3,25 +3,35 @@
 -- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
-
 with Ada.Characters.Handling;
-
-with Adac.Source;
 
 package body Adac.Frontend.Lexer is
 
   use Adac.Frontend.Tokens;
+  use type Adac.Source.Source_File_ID;
 
-  procedure open (self : in out Scanner;
-                  path : String) is
+  procedure open
+    (self    : in out Scanner;
+     path    : String;
+     file_id : Adac.Source.Source_File_ID)
+  is
   begin
+    if self.is_open then
+      raise Program_Error with "scanner is already open";
+    end if;
+
+    if file_id = Adac.Source.INVALID_SOURCE_FILE_ID then
+      raise Program_Error with "scanner requires a valid source file ID";
+    end if;
+
+    self.file_id := Adac.Source.INVALID_SOURCE_FILE_ID;
     Ada.Text_IO.open (self.file, Ada.Text_IO.in_file, path);
     self.is_open     := True;
     self.index       := 0;
     self.end_of_line := True;
 
-    self.file_name := Ada.Strings.Unbounded.to_unbounded_string (path);
-    self.line_no   := 1;
+    self.file_id := file_id;
+    self.line_no := 1;
   end open;
 
   procedure close (self : in out Scanner) is
@@ -29,6 +39,7 @@ package body Adac.Frontend.Lexer is
     if self.is_open then
       Ada.Text_IO.close (self.file);
       self.is_open := False;
+      self.file_id := Adac.Source.INVALID_SOURCE_FILE_ID;
     end if;
   end close;
 
@@ -87,7 +98,7 @@ function next_token (self : in out Scanner) return Token is
   return Adac.Source.Position is
   begin
     return Adac.Source.make_position
-      (Ada.Strings.Unbounded.to_string (self.file_name),
+      (self.file_id,
        self.line_no,
        column);
   end token_position;

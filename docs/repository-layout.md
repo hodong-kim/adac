@@ -37,6 +37,7 @@ adac/
   docs/
     STYLE-GUIDE.md
     compiler-context.md
+    compiler-identifiers.md
     failure-model.md
     repository-layout.md
     roadmap.md
@@ -86,7 +87,7 @@ Adac.Driver
   Command-line handling, compilation pipeline execution, top-level control.
 
 Adac.Compilation
-  Per-compilation ownership, diagnostics, options, and lifecycle state.
+  Per-compilation ownership, diagnostics, sources, options, and lifecycle.
 
 Adac.Frontend
   Source input, lexer, parser, and frontend-level processing.
@@ -110,7 +111,7 @@ Adac.Diagnostics
   Errors, warnings, diagnostic state, and diagnostic rendering.
 
 Adac.Source
-  Source files, source positions, and source spans.
+  Source registry, source file identifiers, positions, and source spans.
 
 Adac.Support
   Small shared utilities used across the project.

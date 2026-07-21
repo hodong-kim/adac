@@ -8,8 +8,10 @@ with Ada.Strings.Unbounded;
 
 with Adac.AST;
 with Adac.Compilation.Diagnostics;
+with Adac.Compilation.Sources;
 with Adac.Frontend.Lexer;
 with Adac.Frontend.Tokens;
+with Adac.Source;
 
 package body Adac.Frontend.Parser is
 
@@ -159,9 +161,11 @@ package body Adac.Frontend.Parser is
     (context : in out Adac.Compilation.Context;
      path    : String)
   return Adac.Frontend.Parse_Result is
-    self : Parser;
+    self    : Parser;
+    file_id : constant Adac.Source.Source_File_ID
+            := Adac.Compilation.Sources.register_file (context, path);
   begin
-    Adac.Frontend.Lexer.open (self.scanner, path);
+    Adac.Frontend.Lexer.open (self.scanner, path, file_id);
     advance (self);
 
     parse_compilation_unit (self, context);
