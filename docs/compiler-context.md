@@ -88,6 +88,7 @@ continues to own and close its input file while parsing.
 The following state remains outside the context:
 
 - source text and open source file handles;
+- transient lexer state and per-file source-character usage;
 - type information;
 - IR storage;
 - target configuration;
@@ -335,13 +336,14 @@ inputs.
 ## Cancellation And Resource Limits
 
 Each context owns an immutable resource-limit policy. The current
-implementation enforces an AST node budget before node publication and converts
-parser exhaustion into a controlled source diagnostic. The detailed contract
-is defined in `resource-limits.md`.
+implementation enforces a per-file normalized source-character budget before
+the lexer reads each character and an AST node budget before node publication.
+The parser converts either exhaustion signal into a controlled source
+diagnostic. The detailed contract is defined in `resource-limits.md`.
 
-Future limits may cover source bytes, token count, identifier count, semantic
-entities, IR objects, diagnostics, nesting depth, and backend temporary storage.
-Cancellation is not implemented yet.
+Future limits may cover aggregate raw source bytes, token count, identifier
+count, semantic entities, IR objects, diagnostics, nesting depth, and backend
+temporary storage. Cancellation is not implemented yet.
 
 Cancellation shall be checked only at documented safe points. A cancelled
 compilation shall release owned resources and shall not publish partial output.
@@ -352,8 +354,8 @@ State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, initial stage
 result types, interned symbols, context-owned AST arena and `Node_ID`, initial
 AST source spans, context-owned procedure entities and `Entity_ID`, initial AST,
-semantic, and IR validators, and the AST node budget are complete. The next
-planned sequence is:
+semantic, and IR validators, the streaming source-character budget, and the AST
+node budget are complete. The next planned sequence is:
 
 1. extend AST and IR validation with each new representation;
 2. expand in-process tests as additional context-owned state is introduced;

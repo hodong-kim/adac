@@ -32,9 +32,17 @@ package body Adac.Frontend.Parser is
     failed  : Boolean := False;
   end record;
 
-  procedure advance (self : in out Parser) is
+  procedure advance
+    (self    : in out Parser;
+     context : in out Adac.Compilation.Context)
+  is
   begin
     self.current := Adac.Frontend.Lexer.next_token (self.scanner);
+  exception
+    when Adac.Resources.Limit_Exceeded =>
+      self.failed := True;
+      Adac.Compilation.Diagnostics.error
+        (context, "source character limit exceeded");
   end advance;
 
   procedure report_expected
@@ -73,7 +81,7 @@ package body Adac.Frontend.Parser is
       return;
     end if;
 
-    advance (self);
+    advance (self, context);
   end expect;
 
   function current_text (self : Parser) return String is
@@ -143,6 +151,10 @@ package body Adac.Frontend.Parser is
      context : in out Adac.Compilation.Context)
   is
   begin
+    if self.failed then
+      return;
+    end if;
+
     if not starts_statement (self.current.kind) then
       report_expected (self, context, Tok_Null);
       return;
@@ -201,8 +213,13 @@ package body Adac.Frontend.Parser is
     file_id : constant Adac.Source.Source_File_ID
             := Adac.Compilation.Sources.register_file (context, path);
   begin
-    Adac.Frontend.Lexer.open (self.scanner, path, file_id);
-    advance (self);
+    Adac.Frontend.Lexer.open
+      (self.scanner,
+       path,
+       file_id,
+       Adac.Compilation.resource_limits
+         (context).maximum_source_characters_per_file);
+    advance (self, context);
 
     parse_compilation_unit (self, context);
 

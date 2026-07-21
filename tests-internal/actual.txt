@@ -1,6 +1,8 @@
 adac: error: context A first error
 adac: error: context A second error
 adac: error: context B error
+adac: error: source character limit exceeded
+adac: error: source character limit exceeded
 adac: error: tests/minimal/input.adb:3:3: AST node limit exceeded
 adac: error: tests/minimal/input.adb:1:1: AST node limit exceeded
 adac: error: procedure name and end name do not match

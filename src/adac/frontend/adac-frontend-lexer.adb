@@ -3,7 +3,9 @@
 -- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
+
 with Ada.Characters.Handling;
+with Ada.Strings.Unbounded;
 
 package body Adac.Frontend.Lexer is
 
@@ -11,9 +13,10 @@ package body Adac.Frontend.Lexer is
   use type Adac.Source.Source_File_ID;
 
   procedure open
-    (self    : in out Scanner;
-     path    : String;
-     file_id : Adac.Source.Source_File_ID)
+    (self               : in out Scanner;
+     path               : String;
+     file_id            : Adac.Source.Source_File_ID;
+     maximum_characters : Adac.Resources.Source_Character_Limit)
   is
   begin
     if self.is_open then
@@ -26,157 +29,207 @@ package body Adac.Frontend.Lexer is
 
     self.file_id := Adac.Source.INVALID_SOURCE_FILE_ID;
     Ada.Text_IO.open (self.file, Ada.Text_IO.in_file, path);
-    self.is_open     := True;
-    self.index       := 0;
-    self.end_of_line := True;
 
-    self.file_id := file_id;
-    self.line_no := 1;
+    self.is_open            := True;
+    self.lookahead          := ASCII.NUL;
+    self.has_lookahead      := False;
+    self.file_id            := file_id;
+    self.line_no            := 1;
+    self.column_no          := 1;
+    self.maximum_characters := maximum_characters;
+    self.characters_read    := 0;
   end open;
 
   procedure close (self : in out Scanner) is
   begin
     if self.is_open then
       Ada.Text_IO.close (self.file);
-      self.is_open := False;
-      self.file_id := Adac.Source.INVALID_SOURCE_FILE_ID;
+      self.is_open       := False;
+      self.has_lookahead := False;
+      self.file_id       := Adac.Source.INVALID_SOURCE_FILE_ID;
     end if;
   end close;
 
-  function classify_word (text : String) return Token_Kind is
-    lower_text : constant String := Ada.Characters.Handling.To_Lower (text);
+  function matches_keyword
+    (text    : Ada.Strings.Unbounded.Unbounded_String;
+     keyword : String)
+  return Boolean
+  is
   begin
-    if lower_text = "procedure" then
+    if Ada.Strings.Unbounded.length (text) /= keyword'Length then
+      return False;
+    end if;
+
+    for index in 1 .. keyword'Length loop
+      if Ada.Characters.Handling.to_lower
+           (Ada.Strings.Unbounded.element (text, index)) /=
+         keyword(keyword'First + index - 1)
+      then
+        return False;
+      end if;
+    end loop;
+
+    return True;
+  end matches_keyword;
+
+  function classify_word
+    (text : Ada.Strings.Unbounded.Unbounded_String) return Token_Kind
+  is
+  begin
+    if matches_keyword (text, "procedure") then
       return Tok_Procedure;
     end if;
 
-    if lower_text = "is" then
+    if matches_keyword (text, "is") then
       return Tok_Is;
     end if;
 
-    if lower_text = "begin" then
+    if matches_keyword (text, "begin") then
       return Tok_Begin;
     end if;
 
-    if lower_text = "end" then
+    if matches_keyword (text, "end") then
       return Tok_End;
     end if;
 
-    if lower_text = "null" then
+    if matches_keyword (text, "null") then
       return Tok_Null;
     end if;
 
-    if lower_text = "return" then
+    if matches_keyword (text, "return") then
       return Tok_Return;
     end if;
 
     return Tok_Identifier;
   end classify_word;
 
-  procedure load_next_line (self : in out Scanner) is
+  procedure load_lookahead (self : in out Scanner) is
   begin
-    if Ada.Text_IO.end_of_file (self.file) then
-      self.end_of_line := True;
+    if self.has_lookahead then
       return;
     end if;
 
-    if self.index /= 0 then
-      self.line_no := self.line_no + 1;
+    if not self.is_open then
+      raise Program_Error with "scanner is not open";
     end if;
 
-    self.current :=
-      Ada.Strings.Unbounded.to_unbounded_string
-        (Ada.Text_IO.get_line (self.file));
+    if Ada.Text_IO.end_of_file (self.file) then
+      return;
+    end if;
 
-    self.index       := 1;
-    self.end_of_line := False;
-  end load_next_line;
+    if self.characters_read >= self.maximum_characters then
+      raise Adac.Resources.Limit_Exceeded with
+        "source character limit exceeded";
+    end if;
 
-function next_token (self : in out Scanner) return Token is
-  function token_position (self   : Scanner;
-                           column : Positive)
-  return Adac.Source.Position is
+    self.lookahead_position :=
+      Adac.Source.make_position
+        (self.file_id, self.line_no, self.column_no);
+    self.characters_read := self.characters_read + 1;
+
+    if Ada.Text_IO.end_of_line (self.file) then
+      self.lookahead := ASCII.LF;
+      Ada.Text_IO.skip_line (self.file);
+      self.line_no   := self.line_no + 1;
+      self.column_no := 1;
+    else
+      Ada.Text_IO.get (self.file, self.lookahead);
+      self.column_no := self.column_no + 1;
+    end if;
+
+    self.has_lookahead := True;
+  end load_lookahead;
+
+  procedure consume_lookahead (self : in out Scanner) is
   begin
-    return Adac.Source.make_position
-      (self.file_id,
-       self.line_no,
-       column);
-  end token_position;
+    if not self.has_lookahead then
+      raise Program_Error with "scanner has no lookahead character";
+    end if;
 
-  start : Natural;
-begin
-  loop
-    if self.end_of_line then
-      if Ada.Text_IO.end_of_file (self.file) then
-        return make_token (Tok_EOF,
-                           "",
-                           token_position (self, 1));
+    self.has_lookahead := False;
+  end consume_lookahead;
+
+  function next_token (self : in out Scanner) return Token is
+  begin
+    loop
+      load_lookahead (self);
+
+      if not self.has_lookahead then
+        return make_token
+          (Tok_EOF,
+           "",
+           Adac.Source.make_position (self.file_id, self.line_no, 1));
       end if;
 
-      load_next_line (self);
-    end if;
+      if self.lookahead = ' ' or else
+         self.lookahead = ASCII.HT or else
+         self.lookahead = ASCII.LF
+      then
+        consume_lookahead (self);
 
-    declare
-      line : constant String :=
-        Ada.Strings.Unbounded.to_string (self.current);
-    begin
-      while self.index <= line'last loop
-        if line(self.index) = ' ' or else line(self.index) = ASCII.HT then
-          self.index := self.index + 1;
+      elsif self.lookahead = '-' then
+        declare
+          position : constant Adac.Source.Position :=
+            self.lookahead_position;
+        begin
+          consume_lookahead (self);
+          load_lookahead (self);
 
-        elsif line(self.index) = '-' and then
-              self.index < line'last and then
-              line(self.index + 1) = '-'
-        then
-          self.index := line'last + 1;
+          if self.has_lookahead and then self.lookahead = '-' then
+            consume_lookahead (self);
 
-        elsif line(self.index) = ';' then
-          declare
-            column : constant Positive := self.index;
-          begin
-            self.index := self.index + 1;
+            loop
+              load_lookahead (self);
+              exit when not self.has_lookahead or else
+                self.lookahead = ASCII.LF;
+              consume_lookahead (self);
+            end loop;
+          else
+            return make_token (Tok_Unknown, "-", position);
+          end if;
+        end;
 
-            return make_token (Tok_Semicolon,
-                               ";",
-                               token_position (self, column));
-          end;
+      elsif self.lookahead = ';' then
+        declare
+          position : constant Adac.Source.Position :=
+            self.lookahead_position;
+        begin
+          consume_lookahead (self);
+          return make_token (Tok_Semicolon, ";", position);
+        end;
 
-        elsif Ada.Characters.Handling.is_letter (line(self.index)) then
-          start := self.index;
-
-          while self.index <= line'last
-            and then
-              (Ada.Characters.Handling.is_letter (line(self.index))
-               or else line(self.index) = '_')
+      elsif Ada.Characters.Handling.is_letter (self.lookahead) then
+        declare
+          position : constant Adac.Source.Position :=
+            self.lookahead_position;
+          text : Ada.Strings.Unbounded.Unbounded_String;
+        begin
           loop
-            self.index := self.index + 1;
+            Ada.Strings.Unbounded.append (text, self.lookahead);
+            consume_lookahead (self);
+            load_lookahead (self);
+
+            exit when not self.has_lookahead or else
+              (not Ada.Characters.Handling.is_letter (self.lookahead)
+               and then self.lookahead /= '_');
           end loop;
 
-          declare
-            text : constant String := line(start .. self.index - 1);
-          begin
-            return make_token (classify_word (text),
-                               text,
-                               token_position (self, start));
-          end;
+          return (kind     => classify_word (text),
+                  text     => text,
+                  position => position);
+        end;
 
-        else
-          declare
-            column : constant Positive := self.index;
-            text   : constant String := String'(1 => line(self.index));
-          begin
-            self.index := self.index + 1;
-
-            return make_token (Tok_Unknown,
-                               text,
-                               token_position (self, column));
-          end;
-        end if;
-      end loop;
-    end;
-
-    self.end_of_line := True;
-  end loop;
-end next_token;
+      else
+        declare
+          position : constant Adac.Source.Position :=
+            self.lookahead_position;
+          text : constant String := String'(1 => self.lookahead);
+        begin
+          consume_lookahead (self);
+          return make_token (Tok_Unknown, text, position);
+        end;
+      end if;
+    end loop;
+  end next_token;
 
 end Adac.Frontend.Lexer;

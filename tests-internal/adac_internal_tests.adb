@@ -390,6 +390,11 @@ begin
     (Adac.Compilation.Diagnostics.error_count (context_b) = 0,
      "context B did not start with zero diagnostics");
   require
+    (Adac.Compilation.resource_limits
+       (context_a).maximum_source_characters_per_file =
+     Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+     "context A did not receive the default source character limit");
+  require
     (Adac.Compilation.resource_limits (context_a).maximum_ast_nodes =
      Adac.Resources.DEFAULT_MAXIMUM_AST_NODES,
      "context A did not receive the default AST node limit");
@@ -563,7 +568,76 @@ begin
   declare
     context : Adac.Compilation.Context :=
       new_context
-        (resource_limits => (maximum_ast_nodes => 0));
+        (resource_limits =>
+           (maximum_source_characters_per_file => 0,
+            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
+    result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Rejected,
+       "zero source character limit did not reject a nonempty file");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 1,
+       "zero source character limit did not record one diagnostic");
+    require
+      (Adac.Compilation.Symbols.symbol_count (context) = 0,
+       "zero source character limit published a symbol");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = 0,
+       "zero source character limit published an AST node");
+  end;
+
+  declare
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits =>
+           (maximum_source_characters_per_file => 20,
+            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
+    result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file (context, "tests/line-comments/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Rejected,
+       "small source character limit did not reject a long line");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 1,
+       "small source character limit did not record one diagnostic");
+    require
+      (Adac.Compilation.Symbols.symbol_count (context) = 1,
+       "small source character limit published unexpected symbols");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = 0,
+       "small source character limit published an AST node");
+  end;
+
+  declare
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits =>
+           (maximum_source_characters_per_file => 41,
+            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
+    result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Succeeded,
+       "exact source character limit rejected the minimal file");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 0,
+       "exact source character limit recorded a diagnostic");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = 2,
+       "exact source character limit changed AST publication");
+  end;
+
+  declare
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits =>
+           (maximum_source_characters_per_file =>
+              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_ast_nodes => 0));
     result : constant Adac.Frontend.Parse_Result :=
       Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
   begin
@@ -581,7 +655,10 @@ begin
   declare
     context : Adac.Compilation.Context :=
       new_context
-        (resource_limits => (maximum_ast_nodes => 0));
+        (resource_limits =>
+           (maximum_source_characters_per_file =>
+              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_ast_nodes => 0));
     file_id : constant Adac.Source.Source_File_ID :=
       Adac.Compilation.Sources.register_file
         (context, "limit-contract.adb");
@@ -605,7 +682,10 @@ begin
   declare
     context : Adac.Compilation.Context :=
       new_context
-        (resource_limits => (maximum_ast_nodes => 1));
+        (resource_limits =>
+           (maximum_source_characters_per_file =>
+              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_ast_nodes => 1));
     result : constant Adac.Frontend.Parse_Result :=
       Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
   begin
