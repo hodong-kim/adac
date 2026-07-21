@@ -8,6 +8,6 @@ with Adac.IR;
 
 package Adac.Backend.Dump is
 
-  function emit (module : Adac.IR.Module) return Boolean;
+  procedure emit (module : Adac.IR.Module);
 
 end Adac.Backend.Dump;

@@ -5,7 +5,6 @@
 -- ============================================================================
 
 with Ada.Command_Line;
-with Ada.Exceptions;
 with Ada.IO_Exceptions;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
@@ -65,26 +64,20 @@ package body Adac.Driver is
 
     Ada.Text_IO.put_line ("adac: ir ok");
 
+    declare
+      result : constant Adac.Backend.Emission_Result :=
+        Adac.Backend.emit (module, output_path);
     begin
-      if not Adac.Backend.emit (module, output_path) then
-        Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
-        return;
-      end if;
-    exception
-      when error : Adac.Backend.Operational_Error =>
-        Adac.Compilation.Diagnostics.error
-          (context, Ada.Exceptions.exception_message (error));
-        finish_with_failure (context);
-        return;
+      case result.status is
+        when Adac.Backend.Emission_Operational_Failure =>
+          Adac.Compilation.Diagnostics.error
+            (context, Adac.Backend.failure_message (result));
+          finish_with_failure (context);
+          return;
 
-      when Ada.IO_Exceptions.Name_Error |
-           Ada.IO_Exceptions.Use_Error |
-           Ada.IO_Exceptions.Device_Error =>
-        Adac.Compilation.Diagnostics.error
-          (context,
-           "I/O failure during backend emission: " & output_path);
-        finish_with_failure (context);
-        return;
+        when Adac.Backend.Emission_Succeeded =>
+          null;
+      end case;
     end;
 
     Ada.Text_IO.put_line ("adac: backend ok");

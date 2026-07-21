@@ -328,10 +328,9 @@ package body Adac.Backend.Native is
       raise;
   end publish_temp_file;
 
-  function emit
+  procedure emit
     (module      : Adac.IR.Module;
      output_path : String)
-  return Boolean
   is
     assembly             : constant String := make_assembly (module);
     assembly_path        : constant String := output_path & ".s";
@@ -378,7 +377,6 @@ package body Adac.Backend.Native is
        output_path,
        generator);
 
-    return True;
   exception
     when others =>
       begin

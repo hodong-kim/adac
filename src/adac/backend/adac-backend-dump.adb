@@ -9,7 +9,7 @@ with Ada.Text_IO;
 
 package body Adac.Backend.Dump is
 
-  function emit (module : Adac.IR.Module) return Boolean is
+  procedure emit (module : Adac.IR.Module) is
     entry_name : constant String :=
       Ada.Strings.Unbounded.to_string (module.entry_name);
   begin
@@ -25,7 +25,6 @@ package body Adac.Backend.Dump is
       end case;
     end loop;
 
-    return True;
   end emit;
 
 end Adac.Backend.Dump;

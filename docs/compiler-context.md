@@ -269,6 +269,11 @@ lowering. Internal compiler contract violations continue to propagate as
 exceptions. Semantic analysis borrows the context and parsed unit and does not
 transfer their ownership.
 
+`Adac.Backend.Emission_Result` distinguishes published output from an external
+operational failure. The failure variant owns a diagnostic message for the
+driver. Backend implementation contract violations continue to propagate as
+exceptions and are not converted into operational failures.
+
 Detailed diagnostics remain in diagnostic state. A stage result indicates
 whether the stage produced a usable output and, where appropriate, the failure
 category.
@@ -311,14 +316,12 @@ compilation shall release owned resources and shall not publish partial output.
 
 State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, and initial
-frontend and semantic-analysis result types are complete. The next planned
-sequence is:
+frontend, semantic-analysis, and backend result types are complete. The next
+planned sequence is:
 
-1. continue introducing stage-specific result types at the remaining stage
-   boundaries;
-2. add AST or IR validation;
-3. expand in-process tests as additional context-owned state is introduced;
-4. add cancellation and resource accounting when their contracts are defined.
+1. add AST or IR validation;
+2. expand in-process tests as additional context-owned state is introduced;
+3. add cancellation and resource accounting when their contracts are defined.
 
 The sequence may change when implementation constraints require it, but each
 change shall preserve existing frontend, AST, semantic, IR, backend, failure,

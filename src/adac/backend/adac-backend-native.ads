@@ -8,7 +8,8 @@ with Adac.IR;
 
 package Adac.Backend.Native is
 
-  function emit (module      : Adac.IR.Module;
-                 output_path : String) return Boolean;
+  procedure emit
+    (module      : Adac.IR.Module;
+     output_path : String);
 
 end Adac.Backend.Native;
