@@ -23,6 +23,7 @@ project Adac_Internal_Tests is
      "../src",
      "../src/adac/ast",
      "../src/adac/diagnostics",
+     "../src/adac/frontend",
      "../src/adac/sema",
      "../src/adac/source",
      "../src/adac/support");

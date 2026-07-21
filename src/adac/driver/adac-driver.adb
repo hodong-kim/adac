@@ -10,6 +10,7 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 
+with Adac.AST;
 with Adac.Backend;
 with Adac.Compilation;
 with Adac.Compilation.Diagnostics;
@@ -40,39 +41,16 @@ package body Adac.Driver is
     Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
   end finish_with_failure;
 
-  procedure compile_file
+  procedure compile_parsed_unit
     (context     : in out Adac.Compilation.Context;
-     input_path  : String;
+     unit        : Adac.AST.Compilation_Unit;
      output_path : String)
   is
-    result : Adac.Frontend.Parse_Result;
     module : Adac.IR.Module;
   begin
-    Ada.Text_IO.put_line ("adac: parsing " & input_path);
-
-    begin
-      result := Adac.Frontend.parse_file (context, input_path);
-    exception
-      when Ada.IO_Exceptions.Name_Error |
-           Ada.IO_Exceptions.Use_Error |
-           Ada.IO_Exceptions.Device_Error |
-           Ada.IO_Exceptions.End_Error |
-           Ada.IO_Exceptions.Data_Error |
-           Ada.IO_Exceptions.Layout_Error =>
-        Adac.Compilation.Diagnostics.error
-          (context, "unable to read input file: " & input_path);
-        finish_with_failure (context);
-        return;
-    end;
-
-    if not result.ok then
-      finish_with_failure (context);
-      return;
-    end if;
-
     Ada.Text_IO.put_line ("adac: parse ok");
 
-    case Adac.Sema.analyze (context, result.unit) is
+    case Adac.Sema.analyze (context, unit) is
       when Adac.Sema.Analysis_Rejected =>
         finish_with_failure (context);
         return;
@@ -83,7 +61,7 @@ package body Adac.Driver is
 
     Ada.Text_IO.put_line ("adac: sema ok");
 
-    module := Adac.IR.Builder.build (result.unit);
+    module := Adac.IR.Builder.build (unit);
 
     Ada.Text_IO.put_line ("adac: ir ok");
 
@@ -115,6 +93,41 @@ package body Adac.Driver is
        Adac.Support.image
          (Adac.Compilation.Diagnostics.error_count (context)) &
        " error(s)");
+  end compile_parsed_unit;
+
+  procedure compile_file
+    (context     : in out Adac.Compilation.Context;
+     input_path  : String;
+     output_path : String)
+  is
+  begin
+    Ada.Text_IO.put_line ("adac: parsing " & input_path);
+
+    begin
+      declare
+        result : constant Adac.Frontend.Parse_Result :=
+          Adac.Frontend.parse_file (context, input_path);
+      begin
+        case result.status is
+          when Adac.Frontend.Parse_Rejected =>
+            finish_with_failure (context);
+
+          when Adac.Frontend.Parse_Succeeded =>
+            compile_parsed_unit (context, result.unit, output_path);
+        end case;
+      end;
+    exception
+      when Ada.IO_Exceptions.Name_Error |
+           Ada.IO_Exceptions.Use_Error |
+           Ada.IO_Exceptions.Device_Error |
+           Ada.IO_Exceptions.End_Error |
+           Ada.IO_Exceptions.Data_Error |
+           Ada.IO_Exceptions.Layout_Error =>
+        Adac.Compilation.Diagnostics.error
+          (context, "unable to read input file: " & input_path);
+        finish_with_failure (context);
+        return;
+    end;
   end compile_file;
 
   procedure run is

@@ -256,6 +256,12 @@ Stage-specific result types will replace Boolean-only APIs incrementally.
 Results shall distinguish ordinary unsuccessful compilation from payload values
 that are valid for the next stage.
 
+`Adac.Frontend.Parse_Result` is a discriminated result. `Parse_Rejected` has no
+AST payload, while `Parse_Succeeded` contains the compilation unit that may be
+passed to semantic analysis. A rejection means that ordinary source diagnostics
+were recorded. External input failures and internal contract violations
+continue to propagate as exceptions.
+
 `Adac.Sema.Analysis_Result` distinguishes `Analysis_Rejected` from
 `Analysis_Succeeded`. A rejection means that the semantic stage recorded
 ordinary source diagnostics and did not produce permission to enter IR
@@ -305,7 +311,8 @@ compilation shall release owned resources and shall not publish partial output.
 
 State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, and initial
-semantic-analysis result type are complete. The next planned sequence is:
+frontend and semantic-analysis result types are complete. The next planned
+sequence is:
 
 1. continue introducing stage-specific result types at the remaining stage
    boundaries;

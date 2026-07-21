@@ -10,6 +10,7 @@ with Adac.AST;
 with Adac.Compilation;
 with Adac.Compilation.Diagnostics;
 with Adac.Compilation.Sources;
+with Adac.Frontend;
 with Adac.Language;
 with Adac.Sema;
 with Adac.Source;
@@ -17,6 +18,7 @@ with Adac.Source;
 procedure adac_internal_tests is
 
   use type Adac.Source.Source_File_ID;
+  use type Adac.Frontend.Parse_Status;
   use type Adac.Sema.Analysis_Result;
 
   function new_context
@@ -199,6 +201,27 @@ begin
     require
       (Adac.Compilation.Diagnostics.error_count (context) = 1,
        "rejected semantic analysis did not record one diagnostic");
+  end;
+
+  declare
+    context : Adac.Compilation.Context := new_context;
+    result  : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Succeeded,
+       "frontend rejected the valid minimal compilation unit");
+
+    case result.status is
+      when Adac.Frontend.Parse_Rejected =>
+        raise Program_Error with "successful parse has no AST payload";
+
+      when Adac.Frontend.Parse_Succeeded =>
+        require
+          (Ada.Strings.Unbounded.to_string (result.unit.procedure_name) =
+           "main",
+           "successful parse returned the wrong AST payload");
+    end case;
   end;
 
 end adac_internal_tests;
