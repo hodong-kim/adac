@@ -10,6 +10,7 @@ package body Adac.Compilation is
   return Context is
   begin
     return (initialized      => True,
+            ast_store        => Adac.AST.create,
             options          => language_options,
             diagnostic_state => Adac.Diagnostics.create,
             source_registry  => Adac.Source.create,

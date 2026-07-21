@@ -4,6 +4,7 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
+with Adac.AST;
 with Adac.Diagnostics;
 with Adac.Language;
 with Adac.Source;
@@ -28,6 +29,7 @@ private
 
   type Context is limited record
     initialized      : Boolean := False;
+    ast_store        : Adac.AST.Store;
     options          : Adac.Language.Options;
     diagnostic_state : Adac.Diagnostics.State;
     source_registry  : Adac.Source.Registry;

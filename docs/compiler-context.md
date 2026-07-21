@@ -30,14 +30,14 @@ The context is defined by `Adac.Compilation.Context`.
 not perform lexing, parsing, semantic analysis, IR construction, or backend
 emission.
 
-`Context` is a limited type. A context is not copied because future context
-state will include owned stores and resources whose identity and cleanup must
-remain unambiguous.
+`Context` is a limited type. A context is not copied because its owned stores
+and resources have identities and cleanup whose ownership must remain
+unambiguous.
 
 ## Current Implementation
 
 The context currently owns language options, diagnostic state, a source file
-registry, and an interned symbol store.
+registry, an interned symbol store, and an append-only AST store.
 
 ```text
 Compilation.Context
@@ -45,6 +45,7 @@ Compilation.Context
   diagnostic state
   source file registry
   symbol store
+  AST store
 ```
 
 The driver creates one context for each compilation and keeps it alive while the
@@ -84,7 +85,7 @@ continues to own and close its input file while parsing.
 The following state remains outside the context:
 
 - source text and open source file handles;
-- AST and semantic storage;
+- semantic storage;
 - type information;
 - IR storage;
 - target configuration;
@@ -104,11 +105,11 @@ Current context-owned state includes:
 - diagnostic state;
 - language options;
 - source file registry and source file identifiers;
-- interned identifier spellings and symbol identifiers.
+- interned identifier spellings and symbol identifiers;
+- append-only AST storage and node identifiers.
 
 Planned context-owned state includes:
 
-- AST storage;
 - semantic entities and type information;
 - IR storage;
 - target options;
@@ -236,11 +237,11 @@ compilation must preserve deterministic externally visible ordering.
 
 ## Stable Identifiers
 
-`Source_File_ID` and `Symbol_ID` are the first stable identifiers implemented by
-the compiler. Each identifier belongs to one context-owned store and contains a
-deterministic one-based index plus a runtime ownership marker. The ownership
-marker detects cross-context use but is not part of serialized or externally
-visible identity.
+`Source_File_ID`, `Symbol_ID`, and `Node_ID` are the stable identifiers currently
+implemented by the compiler. Each identifier belongs to one context-owned store
+and contains a deterministic one-based index plus a runtime ownership marker.
+The marker detects cross-context use but is not part of serialized or
+externally visible identity.
 
 The source registry preserves the exact path spelling supplied to the frontend.
 Registering the same exact path again in one context returns the existing ID.
@@ -251,15 +252,16 @@ Positions now store `Source_File_ID`, line, and column. Diagnostic rendering
 resolves the path through the owning context. Passing an invalid, out-of-range,
 or foreign identifier to a registry is an internal compiler contract violation.
 
-AST compilation units and statements store closed source spans. Structural AST
-validation checks span shape and containment, while semantic-boundary
-validation uses the context source registry to reject foreign or out-of-range
-source identifiers. The detailed contract is defined in `source-spans.md`.
+AST nodes are immutable after publication in the context-owned append-only
+store. Compiler stages pass private `Node_ID` values rather than copying node
+records or retaining raw pointers. Structural AST validation checks node shape
+and span containment, while context-aware validation rejects foreign node,
+symbol, and source identifiers. The detailed contracts are defined in
+`ast-model.md` and `source-spans.md`.
 
 Planned identifier kinds include:
 
 ```text
-Node_ID
 Entity_ID
 Type_ID
 ```
@@ -274,17 +276,17 @@ Results shall distinguish ordinary unsuccessful compilation from payload values
 that are valid for the next stage.
 
 `Adac.Frontend.Parse_Result` is a discriminated result. `Parse_Rejected` has no
-AST payload, while `Parse_Succeeded` contains the compilation unit that may be
-passed to semantic analysis. A rejection means that ordinary source diagnostics
-were recorded. External input failures and internal contract violations
-continue to propagate as exceptions.
+AST payload, while `Parse_Succeeded` contains the root `Node_ID` in the AST
+store owned by the supplied context. A rejection means that ordinary source
+diagnostics were recorded. External input failures and internal contract
+violations continue to propagate as exceptions.
 
 `Adac.Sema.Analysis_Result` distinguishes `Analysis_Rejected` from
 `Analysis_Succeeded`. A rejection means that the semantic stage recorded
 ordinary source diagnostics and did not produce permission to enter IR
 lowering. Internal compiler contract violations continue to propagate as
-exceptions. Semantic analysis borrows the context and parsed unit and does not
-transfer their ownership.
+exceptions. Semantic analysis borrows the context and root node identifier and
+does not transfer their ownership.
 
 `Adac.Backend.Emission_Result` distinguishes published output from an external
 operational failure. The failure variant owns a diagnostic message for the
@@ -308,7 +310,7 @@ The initial AST validator rejects missing procedure names, missing end names,
 and empty statement lists before a successful parse returns or semantic
 analysis begins. It leaves name matching to semantic analysis because that rule
 depends on language options. Its contract and extension rules are defined in
-`ast-validation.md`.
+`ast-model.md`.
 
 The initial IR validator rejects a missing entry name and an empty instruction
 list before a module leaves the builder or enters the backend. Its contract and
@@ -343,8 +345,9 @@ compilation shall release owned resources and shall not publish partial output.
 
 State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, initial stage
-result types, interned symbols, initial AST source spans, and initial AST and IR
-validators are complete. The next planned sequence is:
+result types, interned symbols, context-owned AST arena and `Node_ID`, initial
+AST source spans, and initial AST and IR validators are complete. The next
+planned sequence is:
 
 1. extend AST and IR validation with each new representation;
 2. expand in-process tests as additional context-owned state is introduced;

@@ -13,23 +13,34 @@ package body Adac.IR.Builder is
 
   function build
     (context : Adac.Compilation.Context;
-     unit    : Adac.AST.Compilation_Unit)
+     root    : Adac.AST.Node_ID)
   return Adac.IR.Module is
     module : Adac.IR.Module;
   begin
-    Adac.Compilation.Syntax.validate (context, unit);
+    Adac.Compilation.Syntax.validate (context, root);
     module.entry_name := Ada.Strings.Unbounded.to_unbounded_string
-      (Adac.Compilation.Symbols.spelling (context, unit.procedure_symbol));
+      (Adac.Compilation.Symbols.spelling
+         (context,
+          Adac.Compilation.Syntax.procedure_symbol (context, root)));
 
-    for statement of unit.statements loop
-      case statement.kind is
-        when Adac.AST.Null_Statement =>
+    for index in 1 .. Adac.Compilation.Syntax.statement_count
+      (context, root)
+    loop
+      case Adac.Compilation.Syntax.kind_of
+        (context,
+         Adac.Compilation.Syntax.statement_at (context, root, index))
+      is
+        when Adac.AST.Null_Statement_Node =>
           module.instructions.append
             (Adac.IR.Instruction'(kind => Adac.IR.Null_Instruction));
 
-        when Adac.AST.Return_Statement =>
+        when Adac.AST.Return_Statement_Node =>
           module.instructions.append
             (Adac.IR.Instruction'(kind => Adac.IR.Return_Instruction));
+
+        when Adac.AST.Compilation_Unit_Node =>
+          raise Program_Error with
+            "Adac.IR.Builder: compilation unit used as a statement";
       end case;
     end loop;
 

@@ -26,11 +26,11 @@ identifier belongs to the expected compilation context and is still in range.
 The current parser attaches spans to every produced AST node:
 
 ```text
-Compilation_Unit
+Compilation_Unit_Node
   first: procedure keyword
   last:  compilation-unit terminating semicolon
 
-Statement
+Null_Statement_Node or Return_Statement_Node
   first: null or return keyword
   last:  statement terminating semicolon
 ```
@@ -60,8 +60,9 @@ Malformed, invalid, foreign, or out-of-range spans are internal compiler
 contract violations and raise `Program_Error`. They are not ordinary source
 errors and shall not be converted into semantic rejection.
 
-Source text that cannot be parsed never publishes an AST payload, so partially
-constructed spans remain private to the failed parser operation.
+Source text that cannot be parsed never publishes a root `Node_ID`. Nodes and
+spans appended before rejection remain private to the context-owned AST store
+and are reclaimed with that compilation context.
 
 ## Extension Rules
 

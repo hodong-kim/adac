@@ -19,7 +19,7 @@ package Adac.Frontend is
         null;
 
       when Parse_Succeeded =>
-        unit : Adac.AST.Compilation_Unit;
+        root : Adac.AST.Node_ID;
     end case;
   end record;
 
@@ -30,8 +30,8 @@ package Adac.Frontend is
   --!   in `context` and no AST payload is available. External input failures
   --!   and internal contract violations propagate as exceptions.
   --! ownership
-  --!   A successful result owns its compilation-unit payload. The operation
-  --!   borrows `context` and does not retain `path`.
+  --!   A successful result borrows one root node owned by `context`. The
+  --!   operation does not retain `path`.
   function parse_file
     (context : in out Adac.Compilation.Context;
      path    : String)

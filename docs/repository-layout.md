@@ -39,7 +39,7 @@ adac/
   docs/
     README.md
     STYLE-GUIDE.md
-    ast-validation.md
+    ast-model.md
     compiler-context.md
     compiler-identifiers.md
     compiler-symbols.md
@@ -103,7 +103,7 @@ Adac.Frontend
   Source input, lexer, parser, and frontend-level processing.
 
 Adac.AST
-  Abstract syntax tree definitions and related utilities.
+  Context-owned syntax storage, stable node IDs, and structural validation.
 
 Adac.Sema
   Semantic analysis, name checking, and basic validation.
@@ -248,8 +248,11 @@ end main;
 ```
 
 The internal test project builds a separate test executable. It shall not be a
-main of the production `adac.gpr` project. Internal tests may inspect public
-compiler contracts but should not depend on private representation details.
+main of the production `adac.gpr` project. Internal tests normally use public
+compiler contracts. A test-only child package may access private representation
+only to inject malformed state required to verify a production validator. Such
+packages shall remain under `tests-internal/` and shall not be visible to the
+production project.
 
 `adac`, `adac-style`, and a future `adac-fmt` remain separate tools until a
 stable shared subsystem justifies extraction. Do not couple the tools merely

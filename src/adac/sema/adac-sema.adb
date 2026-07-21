@@ -14,22 +14,33 @@ package body Adac.Sema is
 
   function analyze
     (context : in out Adac.Compilation.Context;
-     unit    : Adac.AST.Compilation_Unit)
+     root    : Adac.AST.Node_ID)
   return Analysis_Result is
   begin
-    Adac.Compilation.Syntax.validate (context, unit);
+    Adac.Compilation.Syntax.validate (context, root);
 
-    if unit.procedure_symbol /= unit.end_symbol then
+    if Adac.Compilation.Syntax.procedure_symbol (context, root) /=
+       Adac.Compilation.Syntax.end_symbol (context, root)
+    then
       Adac.Compilation.Diagnostics.error
         (context, "procedure name and end name do not match");
       return Analysis_Rejected;
     end if;
 
-    for statement of unit.statements loop
-      case statement.kind is
-        when Adac.AST.Null_Statement |
-             Adac.AST.Return_Statement =>
+    for index in 1 .. Adac.Compilation.Syntax.statement_count
+      (context, root)
+    loop
+      case Adac.Compilation.Syntax.kind_of
+        (context,
+         Adac.Compilation.Syntax.statement_at (context, root, index))
+      is
+        when Adac.AST.Null_Statement_Node |
+             Adac.AST.Return_Statement_Node =>
           null;
+
+        when Adac.AST.Compilation_Unit_Node =>
+          raise Program_Error with
+            "Adac.Sema: compilation unit used as a statement";
       end case;
     end loop;
 

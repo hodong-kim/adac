@@ -13,7 +13,7 @@ shall link to the primary document instead of restating mutable details.
 | `compiler-identifiers.md` | Rules common to context-owned identifiers |
 | `compiler-symbols.md` | Symbol interning and `Symbol_ID` |
 | `source-spans.md` | Source positions, ranges, and span ownership |
-| `ast-validation.md` | AST invariants and validation boundaries |
+| `ast-model.md` | AST storage, identity, ownership, and validation |
 | `ir-validation.md` | IR invariants and validation boundaries |
 | `failure-model.md` | Failure categories, propagation, and cleanup |
 | `target-support.md` | Current and planned target support contracts |

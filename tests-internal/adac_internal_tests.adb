@@ -11,6 +11,8 @@ with Adac.Compilation;
 with Adac.Compilation.Diagnostics;
 with Adac.Compilation.Sources;
 with Adac.Compilation.Symbols;
+with Adac.Compilation.Syntax;
+with Adac.Compilation.Syntax.Testing;
 with Adac.Frontend;
 with Adac.IR;
 with Adac.IR.Builder;
@@ -24,6 +26,8 @@ procedure adac_internal_tests is
   use type Adac.Source.Source_File_ID;
   use type Adac.Source.Position;
   use type Adac.Symbols.Symbol_ID;
+  use type Adac.AST.Node_ID;
+  use type Adac.AST.Node_Kind;
   use type Adac.Frontend.Parse_Status;
   use type Adac.Sema.Analysis_Result;
 
@@ -47,25 +51,52 @@ procedure adac_internal_tests is
     end if;
   end require;
 
-  procedure initialize_minimal_unit
+  function create_minimal_unit
     (context        : in out Adac.Compilation.Context;
-     value          : in out Adac.AST.Compilation_Unit;
      procedure_name : String;
      end_name       : String;
      unit_span      : Adac.Source.Span;
      statement_span : Adac.Source.Span)
-  is
+  return Adac.AST.Node_ID is
+    statements : Adac.AST.Node_List;
   begin
-    value.procedure_symbol :=
-      Adac.Compilation.Symbols.intern (context, procedure_name);
-    value.end_symbol :=
-      Adac.Compilation.Symbols.intern (context, end_name);
-    value.span := unit_span;
-    value.statements.append
-      (Adac.AST.Statement'
-         (kind => Adac.AST.Null_Statement,
-          span => statement_span));
-  end initialize_minimal_unit;
+    Adac.AST.append
+      (statements,
+       Adac.Compilation.Syntax.create_statement
+         (context, Adac.AST.Null_Statement_Node, statement_span));
+
+    return Adac.Compilation.Syntax.create_compilation_unit
+      (context,
+       Adac.Compilation.Symbols.intern (context, procedure_name),
+       statements,
+       Adac.Compilation.Symbols.intern (context, end_name),
+       unit_span);
+  end create_minimal_unit;
+
+  function create_unchecked_unit
+    (context          : in out Adac.Compilation.Context;
+     procedure_symbol : Adac.Symbols.Symbol_ID;
+     end_symbol       : Adac.Symbols.Symbol_ID;
+     unit_span        : Adac.Source.Span;
+     statement_span   : Adac.Source.Span;
+     has_statement    : Boolean := True)
+  return Adac.AST.Node_ID is
+    statements : Adac.AST.Node_List;
+  begin
+    if has_statement then
+      Adac.AST.append
+        (statements,
+         Adac.Compilation.Syntax.Testing.create_statement_unchecked
+           (context, Adac.AST.Null_Statement_Node, statement_span));
+    end if;
+
+    return Adac.Compilation.Syntax.Testing.create_compilation_unit_unchecked
+      (context,
+       procedure_symbol,
+       statements,
+       end_symbol,
+       unit_span);
+  end create_unchecked_unit;
 
   function accepts_language_options
     (context : Adac.Compilation.Context) return Boolean
@@ -121,6 +152,19 @@ procedure adac_internal_tests is
     when Program_Error =>
       return False;
   end accepts_symbol_interning;
+
+  function accepts_ast_query
+    (context : Adac.Compilation.Context) return Boolean
+  is
+    count : Natural;
+    pragma unreferenced (count);
+  begin
+    count := Adac.Compilation.Syntax.node_count (context);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_ast_query;
 
   function accepts_symbol
     (context : Adac.Compilation.Context;
@@ -183,10 +227,12 @@ procedure adac_internal_tests is
   end accepts_span;
 
   function accepts_unit
-    (value : Adac.AST.Compilation_Unit) return Boolean
+    (context : Adac.Compilation.Context;
+     root    : Adac.AST.Node_ID)
+  return Boolean
   is
   begin
-    Adac.AST.validate (value);
+    Adac.Compilation.Syntax.validate (context, root);
     return True;
   exception
     when Program_Error =>
@@ -195,12 +241,12 @@ procedure adac_internal_tests is
 
   function accepts_analysis
     (context : in out Adac.Compilation.Context;
-     unit    : Adac.AST.Compilation_Unit)
+     root    : Adac.AST.Node_ID)
   return Boolean is
     result : Adac.Sema.Analysis_Result;
     pragma unreferenced (result);
   begin
-    result := Adac.Sema.analyze (context, unit);
+    result := Adac.Sema.analyze (context, root);
     return True;
   exception
     when Program_Error =>
@@ -209,13 +255,13 @@ procedure adac_internal_tests is
 
   function accepts_lowering
     (context : Adac.Compilation.Context;
-     unit    : Adac.AST.Compilation_Unit)
+     root    : Adac.AST.Node_ID)
   return Boolean
   is
     module : Adac.IR.Module;
     pragma unreferenced (module);
   begin
-    module := Adac.IR.Builder.build (context, unit);
+    module := Adac.IR.Builder.build (context, root);
     return True;
   exception
     when Program_Error =>
@@ -250,6 +296,9 @@ begin
     require
       (not accepts_symbol_interning (uninitialized, "main"),
        "default-initialized context accepted a symbol");
+    require
+      (not accepts_ast_query (uninitialized),
+       "default-initialized context exposed AST storage");
   end;
 
   require
@@ -432,13 +481,12 @@ begin
     statement_span : constant Adac.Source.Span := Adac.Source.make_span
       (Adac.Source.make_position (file_id, 3, 3),
        Adac.Source.make_position (file_id, 3, 7));
-    unit    : Adac.AST.Compilation_Unit;
+    root : constant Adac.AST.Node_ID :=
+      create_minimal_unit
+        (context, "Main", "main", unit_span, statement_span);
   begin
-    initialize_minimal_unit
-      (context, unit, "Main", "main", unit_span, statement_span);
-
     require
-      (Adac.Sema.analyze (context, unit) =
+      (Adac.Sema.analyze (context, root) =
        Adac.Sema.Analysis_Succeeded,
        "semantic analysis rejected matching Ada identifiers");
     require
@@ -456,13 +504,12 @@ begin
     statement_span : constant Adac.Source.Span := Adac.Source.make_span
       (Adac.Source.make_position (file_id, 3, 3),
        Adac.Source.make_position (file_id, 3, 7));
-    unit    : Adac.AST.Compilation_Unit;
+    root : constant Adac.AST.Node_ID :=
+      create_minimal_unit
+        (context, "Main", "main", unit_span, statement_span);
   begin
-    initialize_minimal_unit
-      (context, unit, "Main", "main", unit_span, statement_span);
-
     require
-      (Adac.Sema.analyze (context, unit) =
+      (Adac.Sema.analyze (context, root) =
        Adac.Sema.Analysis_Rejected,
        "semantic analysis accepted mismatched case-sensitive identifiers");
     require
@@ -483,67 +530,96 @@ begin
     outside_span : constant Adac.Source.Span := Adac.Source.make_span
       (Adac.Source.make_position (file_id, 5, 1),
        Adac.Source.make_position (file_id, 5, 5));
-    valid_unit      : Adac.AST.Compilation_Unit;
-    invalid_procedure : Adac.AST.Compilation_Unit;
-    invalid_end       : Adac.AST.Compilation_Unit;
-    empty_body      : Adac.AST.Compilation_Unit;
-    invalid_span    : Adac.AST.Compilation_Unit;
-    outside_child   : Adac.AST.Compilation_Unit;
+    symbol : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context, "main");
+    valid_root : constant Adac.AST.Node_ID :=
+      create_minimal_unit
+        (context, "main", "main", unit_span, statement_span);
+    invalid_procedure : constant Adac.AST.Node_ID :=
+      create_unchecked_unit
+        (context,
+         Adac.Symbols.INVALID_SYMBOL_ID,
+         symbol,
+         unit_span,
+         statement_span);
+    invalid_end : constant Adac.AST.Node_ID :=
+      create_unchecked_unit
+        (context,
+         symbol,
+         Adac.Symbols.INVALID_SYMBOL_ID,
+         unit_span,
+         statement_span);
+    empty_body : constant Adac.AST.Node_ID :=
+      create_unchecked_unit
+        (context,
+         symbol,
+         symbol,
+         unit_span,
+         statement_span,
+         has_statement => False);
+    invalid_span : constant Adac.AST.Node_ID :=
+      create_unchecked_unit
+        (context,
+         symbol,
+         symbol,
+         Adac.Source.INVALID_SPAN,
+         statement_span);
+    outside_child : constant Adac.AST.Node_ID :=
+      create_unchecked_unit
+        (context, symbol, symbol, unit_span, outside_span);
   begin
-    initialize_minimal_unit
-      (context, valid_unit, "main", "main", unit_span, statement_span);
-    initialize_minimal_unit
-      (context,
-       invalid_procedure,
-       "main",
-       "main",
-       unit_span,
-       statement_span);
-    initialize_minimal_unit
-      (context, invalid_end, "main", "main", unit_span, statement_span);
-    invalid_procedure.procedure_symbol := Adac.Symbols.INVALID_SYMBOL_ID;
-    invalid_end.end_symbol := Adac.Symbols.INVALID_SYMBOL_ID;
+    declare
+      statements   : Adac.AST.Node_List;
+      before_count : constant Natural :=
+        Adac.Compilation.Syntax.node_count (context);
+      rejected : Boolean := False;
+    begin
+      begin
+        declare
+          root : constant Adac.AST.Node_ID :=
+            Adac.Compilation.Syntax.create_compilation_unit
+              (context, symbol, statements, symbol, unit_span);
+          pragma unreferenced (root);
+        begin
+          null;
+        end;
+      exception
+        when Program_Error =>
+          rejected := True;
+      end;
 
-    initialize_minimal_unit
-      (context, empty_body, "main", "main", unit_span, statement_span);
-    empty_body.statements.clear;
-
-    initialize_minimal_unit
-      (context,
-       invalid_span,
-       "main",
-       "main",
-       Adac.Source.INVALID_SPAN,
-       statement_span);
-    initialize_minimal_unit
-      (context,
-       outside_child,
-       "main",
-       "main",
-       unit_span,
-       outside_span);
+      require
+        (rejected,
+         "AST constructor accepted an empty statement list");
+      require
+        (Adac.Compilation.Syntax.node_count (context) = before_count,
+         "rejected AST construction published a partial node");
+    end;
 
     require
-      (accepts_unit (valid_unit),
+      (accepts_unit (context, valid_root),
        "AST validator rejected a valid minimal compilation unit");
     require
-      (not accepts_unit (invalid_procedure),
+      (not accepts_unit (context, invalid_procedure),
        "AST validator accepted an invalid procedure symbol");
     require
-      (not accepts_unit (invalid_end),
+      (not accepts_unit (context, invalid_end),
        "AST validator accepted an invalid end symbol");
     require
-      (not accepts_unit (empty_body),
+      (not accepts_unit (context, empty_body),
        "AST validator accepted an empty statement list");
     require
-      (not accepts_unit (invalid_span),
+      (not accepts_unit (context, invalid_span),
        "AST validator accepted an invalid unit span");
     require
       (not accepts_lowering (context, invalid_span),
        "IR builder accepted an invalid AST span");
     require
-      (not accepts_unit (outside_child),
+      (not accepts_unit (context, outside_child),
        "AST validator accepted a statement outside its unit span");
+    require
+      (not accepts_unit (context, Adac.AST.INVALID_NODE_ID),
+       "AST validator accepted the invalid node identifier");
   end;
 
   declare
@@ -558,29 +634,49 @@ begin
     statement_span : constant Adac.Source.Span := Adac.Source.make_span
       (Adac.Source.make_position (file_id, 3, 3),
        Adac.Source.make_position (file_id, 3, 7));
-    foreign_symbol_unit : Adac.AST.Compilation_Unit;
-    foreign_span_unit   : Adac.AST.Compilation_Unit;
+    foreign_file_id : constant Adac.Source.Source_File_ID :=
+      Adac.Compilation.Sources.register_file
+        (foreign_context, "foreign-context.adb");
+    foreign_unit_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (foreign_file_id, 1, 1),
+       Adac.Source.make_position (foreign_file_id, 4, 9));
+    foreign_statement_span : constant Adac.Source.Span :=
+      Adac.Source.make_span
+        (Adac.Source.make_position (foreign_file_id, 3, 3),
+         Adac.Source.make_position (foreign_file_id, 3, 7));
+    owner_symbol : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (owner_context, "main");
+    foreign_symbol : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (foreign_context, "main");
+    owner_root : constant Adac.AST.Node_ID :=
+      create_minimal_unit
+        (owner_context, "main", "main", unit_span, statement_span);
+    foreign_symbol_root : constant Adac.AST.Node_ID :=
+      create_unchecked_unit
+        (foreign_context,
+         owner_symbol,
+         owner_symbol,
+         foreign_unit_span,
+         foreign_statement_span);
+    foreign_span_root : constant Adac.AST.Node_ID :=
+      create_unchecked_unit
+        (foreign_context,
+         foreign_symbol,
+         foreign_symbol,
+         unit_span,
+         statement_span);
   begin
-    initialize_minimal_unit
-      (owner_context,
-       foreign_symbol_unit,
-       "main",
-       "main",
-       unit_span,
-       statement_span);
-    initialize_minimal_unit
-      (foreign_context,
-       foreign_span_unit,
-       "main",
-       "main",
-       unit_span,
-       statement_span);
-
     require
-      (not accepts_analysis (foreign_context, foreign_symbol_unit),
+      (owner_root /= foreign_symbol_root,
+       "different AST stores produced the same node identity");
+    require
+      (not accepts_analysis (foreign_context, owner_root),
+       "semantic analysis accepted a foreign node identifier");
+    require
+      (not accepts_analysis (foreign_context, foreign_symbol_root),
        "semantic analysis accepted a foreign symbol");
     require
-      (not accepts_analysis (foreign_context, foreign_span_unit),
+      (not accepts_analysis (foreign_context, foreign_span_root),
        "semantic analysis accepted a foreign source span");
   end;
 
@@ -600,22 +696,44 @@ begin
       when Adac.Frontend.Parse_Succeeded =>
         require
           (Adac.Compilation.Symbols.spelling
-             (context, result.unit.procedure_symbol) =
+             (context,
+              Adac.Compilation.Syntax.procedure_symbol
+                (context, result.root)) =
            "main",
            "successful parse returned the wrong AST payload");
+        require
+          (Adac.Compilation.Syntax.node_count (context) = 2,
+           "minimal parse did not create exactly two AST nodes");
+        require
+          (Adac.Compilation.Syntax.kind_of (context, result.root) =
+           Adac.AST.Compilation_Unit_Node,
+           "successful parse returned a non-unit root node");
+        require
+          (Adac.Compilation.Syntax.statement_count
+             (context, result.root) = 1,
+           "minimal parse returned the wrong statement count");
 
         declare
+          unit_span : constant Adac.Source.Span :=
+            Adac.Compilation.Syntax.node_span (context, result.root);
+          statement : constant Adac.AST.Node_ID :=
+            Adac.Compilation.Syntax.statement_at
+              (context, result.root, 1);
+          statement_span : constant Adac.Source.Span :=
+            Adac.Compilation.Syntax.node_span (context, statement);
           unit_first : constant Adac.Source.Position :=
-            Adac.Source.first_position (result.unit.span);
+            Adac.Source.first_position (unit_span);
           unit_last : constant Adac.Source.Position :=
-            Adac.Source.last_position (result.unit.span);
-          statement : constant Adac.AST.Statement :=
-            result.unit.statements.first_element;
+            Adac.Source.last_position (unit_span);
           statement_first : constant Adac.Source.Position :=
-            Adac.Source.first_position (statement.span);
+            Adac.Source.first_position (statement_span);
           statement_last : constant Adac.Source.Position :=
-            Adac.Source.last_position (statement.span);
+            Adac.Source.last_position (statement_span);
         begin
+          require
+            (Adac.Compilation.Syntax.kind_of (context, statement) =
+             Adac.AST.Null_Statement_Node,
+             "minimal parse returned the wrong statement kind");
           require
             (unit_first.line = 1 and then unit_first.column = 1 and then
              unit_last.line = 4 and then unit_last.column = 9,

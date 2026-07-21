@@ -37,9 +37,8 @@ the identifier character set expands.
 One `Adac.Compilation.Context` owns one symbol store. A `Symbol_ID` borrows that
 store and is meaningful only while the context remains alive.
 
-`INVALID_SYMBOL_ID` is the default sentinel for an AST node under construction.
-Resolving an invalid, foreign, or out-of-range ID is an internal compiler
-contract violation.
+`INVALID_SYMBOL_ID` is the explicit invalid sentinel. Resolving an invalid,
+foreign, or out-of-range ID is an internal compiler contract violation.
 
 The parser interns procedure and end names through the compilation context.
 Context-aware AST validation runs before semantic analysis and IR lowering.
@@ -71,9 +70,10 @@ rolled back before the failure propagates.
 
 ## Extension Rules
 
-`Symbol_ID` identifies an interned name, not a declaration or semantic entity.
-Future `Entity_ID`, `Type_ID`, and `Node_ID` stores remain distinct and shall
-not reuse symbol identity as object identity.
+`Symbol_ID` identifies an interned name, not a declaration, AST node, or
+semantic entity. `Node_ID` is already a distinct AST identity. Future
+`Entity_ID` and `Type_ID` stores shall likewise remain distinct and shall not
+reuse symbol identity as object identity.
 
 Persistent formats shall serialize schema-defined symbol ordinals and owned
 spellings, never runtime ownership markers.

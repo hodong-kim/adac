@@ -42,14 +42,14 @@ package body Adac.Driver is
 
   procedure compile_parsed_unit
     (context     : in out Adac.Compilation.Context;
-     unit        : Adac.AST.Compilation_Unit;
+     root        : Adac.AST.Node_ID;
      output_path : String)
   is
     module : Adac.IR.Module;
   begin
     Ada.Text_IO.put_line ("adac: parse ok");
 
-    case Adac.Sema.analyze (context, unit) is
+    case Adac.Sema.analyze (context, root) is
       when Adac.Sema.Analysis_Rejected =>
         finish_with_failure (context);
         return;
@@ -60,7 +60,7 @@ package body Adac.Driver is
 
     Ada.Text_IO.put_line ("adac: sema ok");
 
-    module := Adac.IR.Builder.build (context, unit);
+    module := Adac.IR.Builder.build (context, root);
 
     Ada.Text_IO.put_line ("adac: ir ok");
 
@@ -106,7 +106,7 @@ package body Adac.Driver is
             finish_with_failure (context);
 
           when Adac.Frontend.Parse_Succeeded =>
-            compile_parsed_unit (context, result.unit, output_path);
+            compile_parsed_unit (context, result.root, output_path);
         end case;
       end;
     exception

@@ -20,10 +20,10 @@ package Adac.Sema is
   --!   recorded in `context`. Internal contract violations propagate as
   --!   exceptions rather than being converted into a rejection.
   --! ownership
-  --!   The operation borrows `context` and `unit` and transfers no ownership.
+  --!   The operation borrows `context` and `root` and transfers no ownership.
   function analyze
     (context : in out Adac.Compilation.Context;
-     unit    : Adac.AST.Compilation_Unit)
+     root    : Adac.AST.Node_ID)
   return Analysis_Result;
 
 end Adac.Sema;

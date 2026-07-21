@@ -10,9 +10,11 @@ with Adac.AST;
 with Adac.Compilation.Diagnostics;
 with Adac.Compilation.Sources;
 with Adac.Compilation.Symbols;
+with Adac.Compilation.Syntax;
 with Adac.Frontend.Lexer;
 with Adac.Frontend.Tokens;
 with Adac.Source;
+with Adac.Symbols;
 
 package body Adac.Frontend.Parser is
 
@@ -21,7 +23,11 @@ package body Adac.Frontend.Parser is
   type Parser is limited record
     scanner : Adac.Frontend.Lexer.Scanner;
     current : Token;
-    unit    : Adac.AST.Compilation_Unit;
+    procedure_symbol : Adac.Symbols.Symbol_ID :=
+      Adac.Symbols.INVALID_SYMBOL_ID;
+    statements : Adac.AST.Node_List;
+    end_symbol : Adac.Symbols.Symbol_ID := Adac.Symbols.INVALID_SYMBOL_ID;
+    unit_span  : Adac.Source.Span := Adac.Source.INVALID_SPAN;
     failed  : Boolean := False;
   end record;
 
@@ -91,15 +97,15 @@ package body Adac.Frontend.Parser is
   is
     first          : constant Adac.Source.Position := self.current.position;
     last           : Adac.Source.Position;
-    statement_kind : Adac.AST.Statement_Kind := Adac.AST.Null_Statement;
+    statement_kind : Adac.AST.Node_Kind := Adac.AST.Null_Statement_Node;
   begin
     case self.current.kind is
       when Tok_Null =>
-        statement_kind := Adac.AST.Null_Statement;
+        statement_kind := Adac.AST.Null_Statement_Node;
         expect (self, context, Tok_Null);
 
       when Tok_Return =>
-        statement_kind := Adac.AST.Return_Statement;
+        statement_kind := Adac.AST.Return_Statement_Node;
         expect (self, context, Tok_Return);
 
       when others =>
@@ -115,10 +121,12 @@ package body Adac.Frontend.Parser is
     expect (self, context, Tok_Semicolon);
 
     if not self.failed then
-      self.unit.statements.append
-        (Adac.AST.Statement'
-           (kind => statement_kind,
-            span => Adac.Source.make_span (first, last)));
+      Adac.AST.append
+        (self.statements,
+         Adac.Compilation.Syntax.create_statement
+           (context,
+            statement_kind,
+            Adac.Source.make_span (first, last)));
     end if;
   end parse_statement;
 
@@ -147,7 +155,7 @@ package body Adac.Frontend.Parser is
     expect (self, context, Tok_Procedure);
 
     if not self.failed then
-      self.unit.procedure_symbol :=
+      self.procedure_symbol :=
         Adac.Compilation.Symbols.intern (context, current_text (self));
     end if;
 
@@ -158,7 +166,7 @@ package body Adac.Frontend.Parser is
     expect (self, context, Tok_End);
 
     if not self.failed then
-      self.unit.end_symbol :=
+      self.end_symbol :=
         Adac.Compilation.Symbols.intern (context, current_text (self));
     end if;
 
@@ -171,7 +179,7 @@ package body Adac.Frontend.Parser is
     expect (self, context, Tok_Semicolon);
 
     if not self.failed then
-      self.unit.span := Adac.Source.make_span (first, last);
+      self.unit_span := Adac.Source.make_span (first, last);
     end if;
 
     expect (self, context, Tok_EOF);
@@ -196,9 +204,19 @@ package body Adac.Frontend.Parser is
       return (status => Adac.Frontend.Parse_Rejected);
     end if;
 
-    Adac.AST.validate (self.unit);
-    return (status => Adac.Frontend.Parse_Succeeded,
-            unit   => self.unit);
+    declare
+      root : constant Adac.AST.Node_ID :=
+        Adac.Compilation.Syntax.create_compilation_unit
+          (context,
+           self.procedure_symbol,
+           self.statements,
+           self.end_symbol,
+           self.unit_span);
+    begin
+      Adac.Compilation.Syntax.validate (context, root);
+      return (status => Adac.Frontend.Parse_Succeeded,
+              root   => root);
+    end;
   exception
     when others =>
       begin

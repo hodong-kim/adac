@@ -6,13 +6,15 @@
 
 with Adac.AST;
 with Adac.Compilation;
--- with Adac.IR;
 
 package Adac.IR.Builder is
 
+  --! summary: Lower one validated AST root to target-independent IR.
+  --! ownership
+  --!   The operation borrows `context` and `root` and returns an owned module.
   function build
     (context : Adac.Compilation.Context;
-     unit    : Adac.AST.Compilation_Unit)
+     root    : Adac.AST.Node_ID)
   return Adac.IR.Module;
 
 end Adac.IR.Builder;
