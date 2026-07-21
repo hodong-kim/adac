@@ -53,6 +53,7 @@ adac/
     adac.ads
     adac_main.adb
     adac/
+      compilation/
       driver/
       frontend/
       ast/

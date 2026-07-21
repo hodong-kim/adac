@@ -28,6 +28,7 @@ project adac is
   for Source_Dirs use
     (Generated_Source_Dir,
      "src",
+     "src/adac/compilation",
      "src/adac/frontend",
      "src/adac/driver",
      "src/adac/ast",
