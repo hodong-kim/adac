@@ -103,12 +103,11 @@ Current context-owned state includes:
 
 - diagnostic state;
 - language options;
-- source file registry and source file identifiers.
+- source file registry and source file identifiers;
 - interned identifier spellings and symbol identifiers.
 
 Planned context-owned state includes:
 
-- interned identifiers;
 - AST storage;
 - semantic entities and type information;
 - IR storage;
