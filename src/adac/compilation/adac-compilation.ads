@@ -8,6 +8,7 @@ with Adac.AST;
 with Adac.Diagnostics;
 with Adac.Language;
 with Adac.Resources;
+with Adac.Semantics;
 with Adac.Source;
 with Adac.Symbols;
 
@@ -42,6 +43,7 @@ private
     limits           : Adac.Resources.Limits;
     diagnostic_state : Adac.Diagnostics.State;
     source_registry  : Adac.Source.Registry;
+    semantic_store   : Adac.Semantics.Store;
     symbol_store     : Adac.Symbols.Store;
   end record;
 

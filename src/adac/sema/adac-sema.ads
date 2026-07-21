@@ -6,21 +6,35 @@
 
 with Adac.AST;
 with Adac.Compilation;
+with Adac.Semantics;
 
 package Adac.Sema is
 
-  type Analysis_Result is
+  type Analysis_Status is
     (Analysis_Rejected,
      Analysis_Succeeded);
+
+  type Analysis_Result
+    (status : Analysis_Status := Analysis_Rejected)
+  is record
+    case status is
+      when Analysis_Rejected =>
+        null;
+
+      when Analysis_Succeeded =>
+        entity : Adac.Semantics.Entity_ID;
+    end case;
+  end record;
 
   --! summary
   --!   Checks whether one parsed compilation unit is valid for IR lowering.
   --! contract
-  --!   `Analysis_Rejected` means that ordinary source diagnostics were
-  --!   recorded in `context`. Internal contract violations propagate as
-  --!   exceptions rather than being converted into a rejection.
+  --!   `Analysis_Rejected` has no entity payload and means that ordinary source
+  --!   diagnostics were recorded in `context`. Internal contract violations
+  --!   propagate as exceptions rather than being converted into a rejection.
   --! ownership
-  --!   The operation borrows `context` and `root` and transfers no ownership.
+  --!   A successful result borrows one entity owned by `context`. The
+  --!   operation borrows `root` and transfers no ownership.
   function analyze
     (context : in out Adac.Compilation.Context;
      root    : Adac.AST.Node_ID)

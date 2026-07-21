@@ -17,6 +17,7 @@ shall link to the primary document instead of restating mutable details.
 | `ir-validation.md` | IR invariants and validation boundaries |
 | `failure-model.md` | Failure categories, propagation, and cleanup |
 | `resource-limits.md` | Compilation budgets and exhaustion behavior |
+| `semantic-model.md` | Semantic entities, identity, and validation |
 | `target-support.md` | Current and planned target support contracts |
 | `repository-layout.md` | Package, source, and test placement |
 | `STYLE-GUIDE.md` | Source style and API documentation conventions |

@@ -17,6 +17,7 @@ package body Adac.Compilation is
             limits           => resource_limits,
             diagnostic_state => Adac.Diagnostics.create,
             source_registry  => Adac.Source.create,
+            semantic_store   => Adac.Semantics.create,
             symbol_store     => Adac.Symbols.create
               (language_options.case_sensitive_identifiers));
   end create;

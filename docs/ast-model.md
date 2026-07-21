@@ -82,8 +82,10 @@ has no AST payload. A successful parse contains the root `Node_ID`, which
 borrows the AST store in the context supplied to `parse_file`.
 
 The parser validates the completed root before returning success. Semantic
-analysis and IR construction repeat context-aware validation before consuming
-the tree. Validation does not transfer ownership or modify the store.
+analysis repeats context-aware validation before consuming the tree and
+publishes a semantic entity on success. IR construction reaches the declaration
+through that validated entity. Validation does not transfer ownership or modify
+the store.
 
 `Adac.Compilation.Syntax.validate` checks:
 

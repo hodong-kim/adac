@@ -48,6 +48,7 @@ adac/
     resource-limits.md
     repository-layout.md
     roadmap.md
+    semantic-model.md
     source-spans.md
     target-support.md
   src/
@@ -59,6 +60,7 @@ adac/
       frontend/
       ast/
       sema/
+      semantics/
       ir/
       backend/
       wasm/
@@ -82,6 +84,7 @@ Adac.Compilation
 Adac.Frontend
 Adac.AST
 Adac.Sema
+Adac.Semantics
 Adac.IR
 Adac.Backend
 Adac.Wasm
@@ -109,6 +112,9 @@ Adac.AST
 
 Adac.Sema
   Semantic analysis, name checking, and basic validation.
+
+Adac.Semantics
+  Context-owned semantic entities, stable entity IDs, and validation.
 
 Adac.IR
   Custom IR definitions, IR construction, and IR validation.

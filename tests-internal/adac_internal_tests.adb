@@ -9,6 +9,8 @@ with Ada.Strings.Unbounded;
 with Adac.AST;
 with Adac.Compilation;
 with Adac.Compilation.Diagnostics;
+with Adac.Compilation.Semantics;
+with Adac.Compilation.Semantics.Testing;
 with Adac.Compilation.Sources;
 with Adac.Compilation.Symbols;
 with Adac.Compilation.Syntax;
@@ -19,6 +21,7 @@ with Adac.IR.Builder;
 with Adac.Language;
 with Adac.Resources;
 with Adac.Sema;
+with Adac.Semantics;
 with Adac.Source;
 with Adac.Symbols;
 
@@ -26,11 +29,13 @@ procedure adac_internal_tests is
 
   use type Adac.Source.Source_File_ID;
   use type Adac.Source.Position;
+  use type Adac.Source.Span;
   use type Adac.Symbols.Symbol_ID;
   use type Adac.AST.Node_ID;
   use type Adac.AST.Node_Kind;
   use type Adac.Frontend.Parse_Status;
-  use type Adac.Sema.Analysis_Result;
+  use type Adac.Sema.Analysis_Status;
+  use type Adac.Semantics.Entity_Kind;
 
   function new_context
     (case_sensitive_identifiers : Boolean := False;
@@ -169,6 +174,19 @@ procedure adac_internal_tests is
       return False;
   end accepts_ast_query;
 
+  function accepts_semantic_query
+    (context : Adac.Compilation.Context) return Boolean
+  is
+    count : Natural;
+    pragma unreferenced (count);
+  begin
+    count := Adac.Compilation.Semantics.entity_count (context);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_semantic_query;
+
   function rejects_invalid_statement_before_limit
     (context : in out Adac.Compilation.Context;
      span    : Adac.Source.Span)
@@ -296,15 +314,33 @@ procedure adac_internal_tests is
       return False;
   end accepts_analysis;
 
+  function analyze_entity
+    (context : in out Adac.Compilation.Context;
+     root    : Adac.AST.Node_ID)
+  return Adac.Semantics.Entity_ID
+  is
+    result : constant Adac.Sema.Analysis_Result :=
+      Adac.Sema.analyze (context, root);
+  begin
+    case result.status is
+      when Adac.Sema.Analysis_Rejected =>
+        raise Program_Error with
+          "adac_internal_tests: expected semantic success";
+
+      when Adac.Sema.Analysis_Succeeded =>
+        return result.entity;
+    end case;
+  end analyze_entity;
+
   function accepts_lowering
     (context : Adac.Compilation.Context;
-     root    : Adac.AST.Node_ID)
+     entity  : Adac.Semantics.Entity_ID)
   return Boolean
   is
     module : Adac.IR.Module;
     pragma unreferenced (module);
   begin
-    module := Adac.IR.Builder.build (context, root);
+    module := Adac.IR.Builder.build (context, entity);
     return True;
   exception
     when Program_Error =>
@@ -342,6 +378,9 @@ begin
     require
       (not accepts_ast_query (uninitialized),
        "default-initialized context exposed AST storage");
+    require
+      (not accepts_semantic_query (uninitialized),
+       "default-initialized context exposed semantic storage");
   end;
 
   require
@@ -516,6 +555,9 @@ begin
     require
       (Adac.Compilation.Sources.file_count (context_c) = 0,
        "new context inherited source files from an earlier context");
+    require
+      (Adac.Compilation.Semantics.entity_count (context_c) = 0,
+       "new context inherited semantic entities from an earlier context");
   end;
 
   declare
@@ -591,14 +633,45 @@ begin
     root : constant Adac.AST.Node_ID :=
       create_minimal_unit
         (context, "Main", "main", unit_span, statement_span);
+    analysis : constant Adac.Sema.Analysis_Result :=
+      Adac.Sema.analyze (context, root);
   begin
     require
-      (Adac.Sema.analyze (context, root) =
-       Adac.Sema.Analysis_Succeeded,
+      (analysis.status = Adac.Sema.Analysis_Succeeded,
        "semantic analysis rejected matching Ada identifiers");
     require
       (Adac.Compilation.Diagnostics.error_count (context) = 0,
        "successful semantic analysis recorded a diagnostic");
+
+    case analysis.status is
+      when Adac.Sema.Analysis_Rejected =>
+        null;
+
+      when Adac.Sema.Analysis_Succeeded =>
+        require
+          (Adac.Compilation.Semantics.entity_count (context) = 1,
+           "successful semantic analysis did not publish one entity");
+        require
+          (Adac.Compilation.Semantics.kind_of
+             (context, analysis.entity) =
+           Adac.Semantics.Procedure_Body_Entity,
+           "semantic analysis published the wrong entity kind");
+        require
+          (Adac.Compilation.Semantics.declaration
+             (context, analysis.entity) = root,
+           "semantic entity refers to the wrong AST declaration");
+        require
+          (Adac.Compilation.Semantics.symbol (context, analysis.entity) =
+           Adac.Compilation.Syntax.procedure_symbol (context, root),
+           "semantic entity stores the wrong symbol");
+        require
+          (Adac.Compilation.Semantics.entity_span
+             (context, analysis.entity) = unit_span,
+           "semantic entity stores the wrong source span");
+        require
+          (accepts_lowering (context, analysis.entity),
+           "IR builder rejected a valid semantic entity");
+    end case;
   end;
 
   declare
@@ -614,14 +687,18 @@ begin
     root : constant Adac.AST.Node_ID :=
       create_minimal_unit
         (context, "Main", "main", unit_span, statement_span);
+    analysis : constant Adac.Sema.Analysis_Result :=
+      Adac.Sema.analyze (context, root);
   begin
     require
-      (Adac.Sema.analyze (context, root) =
-       Adac.Sema.Analysis_Rejected,
+      (analysis.status = Adac.Sema.Analysis_Rejected,
        "semantic analysis accepted mismatched case-sensitive identifiers");
     require
       (Adac.Compilation.Diagnostics.error_count (context) = 1,
        "rejected semantic analysis did not record one diagnostic");
+    require
+      (Adac.Compilation.Semantics.entity_count (context) = 0,
+       "rejected semantic analysis published an entity");
   end;
 
   declare
@@ -719,9 +796,6 @@ begin
       (not accepts_unit (context, invalid_span),
        "AST validator accepted an invalid unit span");
     require
-      (not accepts_lowering (context, invalid_span),
-       "IR builder accepted an invalid AST span");
-    require
       (not accepts_unit (context, outside_child),
        "AST validator accepted a statement outside its unit span");
     require
@@ -758,6 +832,13 @@ begin
     owner_root : constant Adac.AST.Node_ID :=
       create_minimal_unit
         (owner_context, "main", "main", unit_span, statement_span);
+    foreign_root : constant Adac.AST.Node_ID :=
+      create_minimal_unit
+        (foreign_context,
+         "main",
+         "main",
+         foreign_unit_span,
+         foreign_statement_span);
     foreign_symbol_root : constant Adac.AST.Node_ID :=
       create_unchecked_unit
         (foreign_context,
@@ -772,6 +853,46 @@ begin
          foreign_symbol,
          unit_span,
          statement_span);
+    owner_entity : constant Adac.Semantics.Entity_ID :=
+      analyze_entity (owner_context, owner_root);
+    foreign_declaration_entity : constant Adac.Semantics.Entity_ID :=
+      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
+        (foreign_context,
+         owner_root,
+         foreign_symbol,
+         foreign_unit_span);
+    foreign_symbol_entity : constant Adac.Semantics.Entity_ID :=
+      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
+        (foreign_context,
+         foreign_root,
+         owner_symbol,
+         foreign_unit_span);
+    foreign_span_entity : constant Adac.Semantics.Entity_ID :=
+      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
+        (foreign_context,
+         foreign_root,
+         foreign_symbol,
+         unit_span);
+    other_symbol : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (foreign_context, "other");
+    mismatched_symbol_entity : constant Adac.Semantics.Entity_ID :=
+      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
+        (foreign_context,
+         foreign_root,
+         other_symbol,
+         foreign_unit_span);
+    mismatched_span_entity : constant Adac.Semantics.Entity_ID :=
+      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
+        (foreign_context,
+         foreign_root,
+         foreign_symbol,
+         foreign_statement_span);
+    invalid_ast_entity : constant Adac.Semantics.Entity_ID :=
+      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
+        (foreign_context,
+         foreign_span_root,
+         foreign_symbol,
+         foreign_unit_span);
   begin
     require
       (owner_root /= foreign_symbol_root,
@@ -785,6 +906,33 @@ begin
     require
       (not accepts_analysis (foreign_context, foreign_span_root),
        "semantic analysis accepted a foreign source span");
+    require
+      (not accepts_lowering (foreign_context, owner_entity),
+       "IR builder accepted a foreign entity identifier");
+    require
+      (not accepts_lowering
+         (foreign_context, foreign_declaration_entity),
+       "IR builder accepted a foreign entity declaration");
+    require
+      (not accepts_lowering (foreign_context, foreign_symbol_entity),
+       "IR builder accepted a foreign entity symbol");
+    require
+      (not accepts_lowering (foreign_context, foreign_span_entity),
+       "IR builder accepted a foreign entity span");
+    require
+      (not accepts_lowering
+         (foreign_context, mismatched_symbol_entity),
+       "IR builder accepted a mismatched entity symbol");
+    require
+      (not accepts_lowering (foreign_context, mismatched_span_entity),
+       "IR builder accepted a mismatched entity span");
+    require
+      (not accepts_lowering (foreign_context, invalid_ast_entity),
+       "IR builder accepted an entity with an invalid AST");
+    require
+      (not accepts_lowering
+         (foreign_context, Adac.Semantics.INVALID_ENTITY_ID),
+       "IR builder accepted the invalid entity identifier");
   end;
 
   declare

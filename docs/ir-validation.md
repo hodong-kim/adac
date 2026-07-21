@@ -34,8 +34,9 @@ yet exist.
 
 ## Validation Boundaries
 
-`Adac.IR.Builder.build` validates a module before returning it. This catches a
-builder defect at the stage that created the malformed representation.
+`Adac.IR.Builder.build` first validates its semantic entity input through the
+compilation context, then validates the constructed module before returning it.
+This catches malformed stage input and builder defects at their boundary.
 
 `Adac.Backend.emit` validates its borrowed module before producing an IR dump,
 temporary file, assembly file, executable, or other published output. This

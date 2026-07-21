@@ -33,6 +33,7 @@ project adac is
      "src/adac/driver",
      "src/adac/ast",
      "src/adac/sema",
+     "src/adac/semantics",
      "src/adac/ir",
      "src/adac/backend",
      "src/adac/diagnostics",

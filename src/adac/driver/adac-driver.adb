@@ -49,18 +49,20 @@ package body Adac.Driver is
   begin
     Ada.Text_IO.put_line ("adac: parse ok");
 
-    case Adac.Sema.analyze (context, root) is
-      when Adac.Sema.Analysis_Rejected =>
-        finish_with_failure (context);
-        return;
+    declare
+      analysis : constant Adac.Sema.Analysis_Result :=
+        Adac.Sema.analyze (context, root);
+    begin
+      case analysis.status is
+        when Adac.Sema.Analysis_Rejected =>
+          finish_with_failure (context);
+          return;
 
-      when Adac.Sema.Analysis_Succeeded =>
-        null;
-    end case;
-
-    Ada.Text_IO.put_line ("adac: sema ok");
-
-    module := Adac.IR.Builder.build (context, root);
+        when Adac.Sema.Analysis_Succeeded =>
+          Ada.Text_IO.put_line ("adac: sema ok");
+          module := Adac.IR.Builder.build (context, analysis.entity);
+      end case;
+    end;
 
     Ada.Text_IO.put_line ("adac: ir ok");
 

@@ -27,6 +27,7 @@ project Adac_Internal_Tests is
      "../src/adac/frontend",
      "../src/adac/ir",
      "../src/adac/sema",
+     "../src/adac/semantics",
      "../src/adac/source",
      "../src/adac/symbols",
      "../src/adac/support");

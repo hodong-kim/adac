@@ -5,6 +5,7 @@
 -- ============================================================================
 
 with Adac.Compilation.Diagnostics;
+with Adac.Compilation.Semantics;
 with Adac.Compilation.Syntax;
 with Adac.Symbols;
 
@@ -24,7 +25,7 @@ package body Adac.Sema is
     then
       Adac.Compilation.Diagnostics.error
         (context, "procedure name and end name do not match");
-      return Analysis_Rejected;
+      return (status => Analysis_Rejected);
     end if;
 
     for index in 1 .. Adac.Compilation.Syntax.statement_count
@@ -44,7 +45,10 @@ package body Adac.Sema is
       end case;
     end loop;
 
-    return Analysis_Succeeded;
+    return
+      (status => Analysis_Succeeded,
+       entity => Adac.Compilation.Semantics.create_procedure
+         (context, root));
   end analyze;
 
 end Adac.Sema;

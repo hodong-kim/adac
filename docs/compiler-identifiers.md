@@ -2,9 +2,9 @@
 
 This document defines the common contract for stable identifiers owned by an
 Adac compilation context. The current implementation covers `Source_File_ID`,
-`Symbol_ID`, and `Node_ID`. Later identifier types shall follow the same
-ownership and determinism rules unless their subsystem documents a stricter
-contract.
+`Symbol_ID`, `Node_ID`, and `Entity_ID`. Later identifier types shall follow the
+same ownership and determinism rules unless their subsystem documents a
+stricter contract.
 
 ## Purpose
 
@@ -35,10 +35,10 @@ Entity_ID
 Type_ID
 ```
 
-`Source_File_ID`, `Symbol_ID`, and `Node_ID` are implemented. `Entity_ID` and
-`Type_ID` shall be introduced with the stores and validators that own them.
+`Source_File_ID`, `Symbol_ID`, `Node_ID`, and `Entity_ID` are implemented.
+`Type_ID` shall be introduced with the type store and validators that own it.
 `Symbol_ID` identifies an interned name and is not interchangeable with a
-future semantic entity ID.
+semantic entity ID.
 
 ## Context Ownership
 
@@ -59,7 +59,8 @@ serialized, rendered in diagnostics, hashed into persistent metadata, or used
 to determine externally visible ordering.
 
 The symbol interning contract is defined in `compiler-symbols.md`. The AST
-storage and node identity contract is defined in `ast-model.md`.
+storage and node identity contract is defined in `ast-model.md`. The semantic
+entity contract is defined in `semantic-model.md`.
 
 ## Invalid State
 
@@ -69,6 +70,7 @@ Every identifier type shall define an explicit invalid value.
 INVALID_SOURCE_FILE_ID
 INVALID_SYMBOL_ID
 INVALID_NODE_ID
+INVALID_ENTITY_ID
 ```
 
 A default-initialized position may contain the invalid value until a lexer or

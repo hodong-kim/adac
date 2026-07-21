@@ -70,10 +70,10 @@ rolled back before the failure propagates.
 
 ## Extension Rules
 
-`Symbol_ID` identifies an interned name, not a declaration, AST node, or
-semantic entity. `Node_ID` is already a distinct AST identity. Future
-`Entity_ID` and `Type_ID` stores shall likewise remain distinct and shall not
-reuse symbol identity as object identity.
+`Symbol_ID` identifies an interned name, not a declaration, AST node, semantic
+entity, or type. `Node_ID` and `Entity_ID` are distinct implemented identities.
+A future `Type_ID` store shall likewise remain distinct and shall not reuse
+symbol identity as object identity.
 
 Persistent formats shall serialize schema-defined symbol ordinals and owned
 spellings, never runtime ownership markers.

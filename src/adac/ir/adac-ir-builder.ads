@@ -4,17 +4,19 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
-with Adac.AST;
 with Adac.Compilation;
+with Adac.Semantics;
 
 package Adac.IR.Builder is
 
-  --! summary: Lower one validated AST root to target-independent IR.
+  --! summary
+  --!   Lower one validated semantic procedure entity to target-independent IR.
   --! ownership
-  --!   The operation borrows `context` and `root` and returns an owned module.
+  --!   The operation borrows `context` and `entity` and returns an owned
+  --!   module.
   function build
     (context : Adac.Compilation.Context;
-     root    : Adac.AST.Node_ID)
+     entity  : Adac.Semantics.Entity_ID)
   return Adac.IR.Module;
 
 end Adac.IR.Builder;

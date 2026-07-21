@@ -38,7 +38,7 @@ unambiguous.
 
 The context currently owns language options, immutable resource limits,
 diagnostic state, a source file registry, an interned symbol store, and an
-append-only AST store.
+append-only AST store and semantic entity store.
 
 ```text
 Compilation.Context
@@ -48,6 +48,7 @@ Compilation.Context
   source file registry
   symbol store
   AST store
+  semantic entity store
 ```
 
 The driver creates one context for each compilation and keeps it alive while the
@@ -87,7 +88,6 @@ continues to own and close its input file while parsing.
 The following state remains outside the context:
 
 - source text and open source file handles;
-- semantic storage;
 - type information;
 - IR storage;
 - target configuration;
@@ -109,11 +109,12 @@ Current context-owned state includes:
 - immutable resource limits;
 - source file registry and source file identifiers;
 - interned identifier spellings and symbol identifiers;
-- append-only AST storage and node identifiers.
+- append-only AST storage and node identifiers;
+- append-only semantic entity storage and entity identifiers.
 
 Planned context-owned state includes:
 
-- semantic entities and type information;
+- type information;
 - IR storage;
 - target options;
 - cancellation state;
@@ -240,11 +241,11 @@ compilation must preserve deterministic externally visible ordering.
 
 ## Stable Identifiers
 
-`Source_File_ID`, `Symbol_ID`, and `Node_ID` are the stable identifiers currently
-implemented by the compiler. Each identifier belongs to one context-owned store
-and contains a deterministic one-based index plus a runtime ownership marker.
-The marker detects cross-context use but is not part of serialized or
-externally visible identity.
+`Source_File_ID`, `Symbol_ID`, `Node_ID`, and `Entity_ID` are the stable
+identifiers currently implemented by the compiler. Each identifier belongs to
+one context-owned store and contains a deterministic one-based index plus a
+runtime ownership marker. The marker detects cross-context use but is not part
+of serialized or externally visible identity.
 
 The source registry preserves the exact path spelling supplied to the frontend.
 Registering the same exact path again in one context returns the existing ID.
@@ -262,10 +263,9 @@ and span containment, while context-aware validation rejects foreign node,
 symbol, and source identifiers. The detailed contracts are defined in
 `ast-model.md` and `source-spans.md`.
 
-Planned identifier kinds include:
+The remaining planned identifier kind is:
 
 ```text
-Entity_ID
 Type_ID
 ```
 
@@ -284,12 +284,12 @@ store owned by the supplied context. A rejection means that ordinary source
 diagnostics were recorded. External input failures and internal contract
 violations continue to propagate as exceptions.
 
-`Adac.Sema.Analysis_Result` distinguishes `Analysis_Rejected` from
-`Analysis_Succeeded`. A rejection means that the semantic stage recorded
-ordinary source diagnostics and did not produce permission to enter IR
-lowering. Internal compiler contract violations continue to propagate as
-exceptions. Semantic analysis borrows the context and root node identifier and
-does not transfer their ownership.
+`Adac.Sema.Analysis_Result` is discriminated by status. A rejection means that
+the semantic stage recorded ordinary source diagnostics and has no semantic
+payload. A successful result contains a context-owned `Entity_ID` that is the
+input to IR lowering. Internal compiler contract violations continue to
+propagate as exceptions. Semantic analysis borrows the context and root node
+identifier and does not transfer their ownership.
 
 `Adac.Backend.Emission_Result` distinguishes published output from an external
 operational failure. The failure variant owns a diagnostic message for the
@@ -351,8 +351,9 @@ compilation shall release owned resources and shall not publish partial output.
 State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, initial stage
 result types, interned symbols, context-owned AST arena and `Node_ID`, initial
-AST source spans, initial AST and IR validators, and the AST node budget are
-complete. The next planned sequence is:
+AST source spans, context-owned procedure entities and `Entity_ID`, initial AST,
+semantic, and IR validators, and the AST node budget are complete. The next
+planned sequence is:
 
 1. extend AST and IR validation with each new representation;
 2. expand in-process tests as additional context-owned state is introduced;
