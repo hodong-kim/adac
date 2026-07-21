@@ -72,10 +72,14 @@ package body Adac.Driver is
 
     Ada.Text_IO.put_line ("adac: parse ok");
 
-    if not Adac.Sema.analyze (context, result.unit) then
-      finish_with_failure (context);
-      return;
-    end if;
+    case Adac.Sema.analyze (context, result.unit) is
+      when Adac.Sema.Analysis_Rejected =>
+        finish_with_failure (context);
+        return;
+
+      when Adac.Sema.Analysis_Succeeded =>
+        null;
+    end case;
 
     Ada.Text_IO.put_line ("adac: sema ok");
 

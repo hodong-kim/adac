@@ -21,7 +21,9 @@ project Adac_Internal_Tests is
   for Source_Dirs use
     (".",
      "../src",
+     "../src/adac/ast",
      "../src/adac/diagnostics",
+     "../src/adac/sema",
      "../src/adac/source",
      "../src/adac/support");
 

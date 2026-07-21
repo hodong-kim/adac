@@ -29,7 +29,7 @@ package body Adac.Sema is
   function analyze
     (context : in out Adac.Compilation.Context;
      unit    : Adac.AST.Compilation_Unit)
-  return Boolean is
+  return Analysis_Result is
     language_options : constant Adac.Language.Options
                      := Adac.Compilation.language_options (context);
     procedure_name : constant String :=
@@ -40,7 +40,7 @@ package body Adac.Sema is
     if not identifiers_match (procedure_name, end_name, language_options) then
       Adac.Compilation.Diagnostics.error
         (context, "procedure name and end name do not match");
-      return False;
+      return Analysis_Rejected;
     end if;
 
     for statement of unit.statements loop
@@ -51,7 +51,7 @@ package body Adac.Sema is
       end case;
     end loop;
 
-    return True;
+    return Analysis_Succeeded;
   end analyze;
 
 end Adac.Sema;

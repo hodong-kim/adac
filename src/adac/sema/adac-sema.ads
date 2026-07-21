@@ -9,9 +9,21 @@ with Adac.Compilation;
 
 package Adac.Sema is
 
+  type Analysis_Result is
+    (Analysis_Rejected,
+     Analysis_Succeeded);
+
+  --! summary
+  --!   Checks whether one parsed compilation unit is valid for IR lowering.
+  --! contract
+  --!   `Analysis_Rejected` means that ordinary source diagnostics were
+  --!   recorded in `context`. Internal contract violations propagate as
+  --!   exceptions rather than being converted into a rejection.
+  --! ownership
+  --!   The operation borrows `context` and `unit` and transfers no ownership.
   function analyze
     (context : in out Adac.Compilation.Context;
      unit    : Adac.AST.Compilation_Unit)
-  return Boolean;
+  return Analysis_Result;
 
 end Adac.Sema;

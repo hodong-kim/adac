@@ -256,6 +256,13 @@ Stage-specific result types will replace Boolean-only APIs incrementally.
 Results shall distinguish ordinary unsuccessful compilation from payload values
 that are valid for the next stage.
 
+`Adac.Sema.Analysis_Result` distinguishes `Analysis_Rejected` from
+`Analysis_Succeeded`. A rejection means that the semantic stage recorded
+ordinary source diagnostics and did not produce permission to enter IR
+lowering. Internal compiler contract violations continue to propagate as
+exceptions. Semantic analysis borrows the context and parsed unit and does not
+transfer their ownership.
+
 Detailed diagnostics remain in diagnostic state. A stage result indicates
 whether the stage produced a usable output and, where appropriate, the failure
 category.
@@ -297,10 +304,11 @@ compilation shall release owned resources and shall not publish partial output.
 ## Migration Sequence
 
 State shall move into the context in small, independently testable changes.
-The minimal context, diagnostic-state migration, and source registry are
-complete. The next planned sequence is:
+The minimal context, diagnostic-state migration, source registry, and initial
+semantic-analysis result type are complete. The next planned sequence is:
 
-1. introduce stage-specific result types;
+1. continue introducing stage-specific result types at the remaining stage
+   boundaries;
 2. add AST or IR validation;
 3. expand in-process tests as additional context-owned state is introduced;
 4. add cancellation and resource accounting when their contracts are defined.

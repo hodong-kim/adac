@@ -1,3 +1,4 @@
 adac: error: context A first error
 adac: error: context A second error
 adac: error: context B error
+adac: error: procedure name and end name do not match

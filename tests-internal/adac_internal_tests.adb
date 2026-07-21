@@ -4,19 +4,27 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
+with Ada.Strings.Unbounded;
+
+with Adac.AST;
 with Adac.Compilation;
 with Adac.Compilation.Diagnostics;
 with Adac.Compilation.Sources;
 with Adac.Language;
+with Adac.Sema;
 with Adac.Source;
 
 procedure adac_internal_tests is
 
   use type Adac.Source.Source_File_ID;
+  use type Adac.Sema.Analysis_Result;
 
-  function new_context return Adac.Compilation.Context is
+  function new_context
+    (case_sensitive_identifiers : Boolean := False)
+  return Adac.Compilation.Context
+  is
     options : constant Adac.Language.Options :=
-      (case_sensitive_identifiers => False);
+      (case_sensitive_identifiers => case_sensitive_identifiers);
   begin
     return Adac.Compilation.create (options);
   end new_context;
@@ -155,6 +163,42 @@ begin
     require
       (Adac.Compilation.Sources.file_count (context_c) = 0,
        "new context inherited source files from an earlier context");
+  end;
+
+  declare
+    context : Adac.Compilation.Context := new_context;
+    unit    : Adac.AST.Compilation_Unit;
+  begin
+    unit.procedure_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("Main");
+    unit.end_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+
+    require
+      (Adac.Sema.analyze (context, unit) =
+       Adac.Sema.Analysis_Succeeded,
+       "semantic analysis rejected matching Ada identifiers");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 0,
+       "successful semantic analysis recorded a diagnostic");
+  end;
+
+  declare
+    context : Adac.Compilation.Context := new_context (True);
+    unit    : Adac.AST.Compilation_Unit;
+  begin
+    unit.procedure_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("Main");
+    unit.end_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+
+    require
+      (Adac.Sema.analyze (context, unit) =
+       Adac.Sema.Analysis_Rejected,
+       "semantic analysis accepted mismatched case-sensitive identifiers");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 1,
+       "rejected semantic analysis did not record one diagnostic");
   end;
 
 end adac_internal_tests;
