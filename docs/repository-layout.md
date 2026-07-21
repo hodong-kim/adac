@@ -36,6 +36,7 @@ adac/
   README.md
   docs/
     STYLE-GUIDE.md
+    ast-validation.md
     compiler-context.md
     compiler-identifiers.md
     failure-model.md

@@ -29,4 +29,11 @@ package Adac.AST is
     end_name       : Ada.Strings.Unbounded.Unbounded_String;
   end record;
 
+  --! summary
+  --!   Validates one abstract syntax tree compilation unit.
+  --! contract
+  --!   Raises `Program_Error` when an internal AST invariant is violated.
+  --!   Validation reports no source diagnostic and does not modify `value`.
+  procedure validate (value : Compilation_Unit);
+
 end Adac.AST;

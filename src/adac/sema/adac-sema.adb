@@ -32,16 +32,23 @@ package body Adac.Sema is
   return Analysis_Result is
     language_options : constant Adac.Language.Options
                      := Adac.Compilation.language_options (context);
-    procedure_name : constant String :=
-      Ada.Strings.Unbounded.to_string (unit.procedure_name);
-    end_name       : constant String :=
-      Ada.Strings.Unbounded.to_string (unit.end_name);
   begin
-    if not identifiers_match (procedure_name, end_name, language_options) then
-      Adac.Compilation.Diagnostics.error
-        (context, "procedure name and end name do not match");
-      return Analysis_Rejected;
-    end if;
+    Adac.AST.validate (unit);
+
+    declare
+      procedure_name : constant String :=
+        Ada.Strings.Unbounded.to_string (unit.procedure_name);
+      end_name       : constant String :=
+        Ada.Strings.Unbounded.to_string (unit.end_name);
+    begin
+      if not identifiers_match
+        (procedure_name, end_name, language_options)
+      then
+        Adac.Compilation.Diagnostics.error
+          (context, "procedure name and end name do not match");
+        return Analysis_Rejected;
+      end if;
+    end;
 
     for statement of unit.statements loop
       case statement.kind is

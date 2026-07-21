@@ -59,6 +59,17 @@ procedure adac_internal_tests is
       return False;
   end accepts_file_id;
 
+  function accepts_unit
+    (value : Adac.AST.Compilation_Unit) return Boolean
+  is
+  begin
+    Adac.AST.validate (value);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_unit;
+
   function accepts_module (module : Adac.IR.Module) return Boolean is
   begin
     Adac.IR.validate (module);
@@ -185,6 +196,8 @@ begin
       Ada.Strings.Unbounded.to_unbounded_string ("Main");
     unit.end_name :=
       Ada.Strings.Unbounded.to_unbounded_string ("main");
+    unit.statements.append
+      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
 
     require
       (Adac.Sema.analyze (context, unit) =
@@ -203,6 +216,8 @@ begin
       Ada.Strings.Unbounded.to_unbounded_string ("Main");
     unit.end_name :=
       Ada.Strings.Unbounded.to_unbounded_string ("main");
+    unit.statements.append
+      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
 
     require
       (Adac.Sema.analyze (context, unit) =
@@ -211,6 +226,48 @@ begin
     require
       (Adac.Compilation.Diagnostics.error_count (context) = 1,
        "rejected semantic analysis did not record one diagnostic");
+  end;
+
+  declare
+    valid_unit      : Adac.AST.Compilation_Unit;
+    empty_procedure : Adac.AST.Compilation_Unit;
+    empty_end       : Adac.AST.Compilation_Unit;
+    empty_body      : Adac.AST.Compilation_Unit;
+  begin
+    valid_unit.procedure_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+    valid_unit.end_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+    valid_unit.statements.append
+      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
+
+    empty_procedure.end_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+    empty_procedure.statements.append
+      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
+
+    empty_end.procedure_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+    empty_end.statements.append
+      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
+
+    empty_body.procedure_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+    empty_body.end_name :=
+      Ada.Strings.Unbounded.to_unbounded_string ("main");
+
+    require
+      (accepts_unit (valid_unit),
+       "AST validator rejected a valid minimal compilation unit");
+    require
+      (not accepts_unit (empty_procedure),
+       "AST validator accepted an empty procedure name");
+    require
+      (not accepts_unit (empty_end),
+       "AST validator accepted an empty end name");
+    require
+      (not accepts_unit (empty_body),
+       "AST validator accepted an empty statement list");
   end;
 
   declare

@@ -176,6 +176,7 @@ package body Adac.Frontend.Parser is
       return (status => Adac.Frontend.Parse_Rejected);
     end if;
 
+    Adac.AST.validate (self.unit);
     return (status => Adac.Frontend.Parse_Succeeded,
             unit   => self.unit);
   exception
