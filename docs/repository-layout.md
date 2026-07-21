@@ -43,6 +43,7 @@ adac/
     ir-validation.md
     repository-layout.md
     roadmap.md
+    source-spans.md
     target-support.md
   src/
     adac/

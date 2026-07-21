@@ -145,6 +145,10 @@ path:line:column
 This resolution must occur while the owning context is alive. A diagnostic from
 one context shall not resolve a position through another context.
 
+A source span is a closed range of two positions in the same source file. Its
+structural, ownership, containment, and failure contracts are defined in
+`source-spans.md`.
+
 ## Failure Behavior
 
 The following conditions are internal compiler contract violations:

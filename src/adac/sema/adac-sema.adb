@@ -8,6 +8,7 @@ with Ada.Characters.Handling;
 with Ada.Strings.Unbounded;
 
 with Adac.Compilation.Diagnostics;
+with Adac.Compilation.Sources;
 with Adac.Language;
 
 package body Adac.Sema is
@@ -34,6 +35,11 @@ package body Adac.Sema is
                      := Adac.Compilation.language_options (context);
   begin
     Adac.AST.validate (unit);
+    Adac.Compilation.Sources.validate_span (context, unit.span);
+
+    for statement of unit.statements loop
+      Adac.Compilation.Sources.validate_span (context, statement.span);
+    end loop;
 
     declare
       procedure_name : constant String :=

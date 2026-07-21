@@ -51,6 +51,39 @@ package Adac.Source is
      column  : Positive)
   return Position;
 
+  type Span is private;
+
+  INVALID_SPAN : constant Span;
+
+  --! summary: Construct a structurally valid closed source span.
+  --! contract
+  --!   Both endpoints must identify the same valid source file, and `first`
+  --!   must not follow `last`.
+  function make_span
+    (first : Position;
+     last  : Position)
+  return Span;
+
+  --! summary: Return the inclusive first position of a valid span.
+  function first_position (value : Span) return Position;
+
+  --! summary: Return the inclusive last position of a valid span.
+  function last_position (value : Span) return Position;
+
+  --! summary: Validate the structural invariants of a source span.
+  procedure validate (value : Span);
+
+  --! summary: Validate a source span against its owning registry.
+  procedure validate
+    (self  : Registry;
+     value : Span);
+
+  --! summary: Return whether one valid span contains another valid span.
+  function contains
+    (container : Span;
+     value     : Span)
+  return Boolean;
+
   --! summary: Render a source position using this registry.
   --! contract: The position file ID must belong to this registry.
   function position_image
@@ -73,6 +106,19 @@ private
   INVALID_SOURCE_FILE_ID : constant Source_File_ID
                          := (owner => null,
                              index => 0);
+
+  type Span is record
+    first : Position;
+    last  : Position;
+  end record;
+
+  INVALID_SPAN : constant Span :=
+    (first => (file_id => INVALID_SOURCE_FILE_ID,
+               line    => 1,
+               column  => 1),
+     last  => (file_id => INVALID_SOURCE_FILE_ID,
+               line    => 1,
+               column  => 1));
 
   package File_Vectors is new Ada.Containers.Vectors
     (Index_Type   => Positive,

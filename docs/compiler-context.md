@@ -249,6 +249,11 @@ Positions now store `Source_File_ID`, line, and column. Diagnostic rendering
 resolves the path through the owning context. Passing an invalid, out-of-range,
 or foreign identifier to a registry is an internal compiler contract violation.
 
+AST compilation units and statements store closed source spans. Structural AST
+validation checks span shape and containment, while semantic-boundary
+validation uses the context source registry to reject foreign or out-of-range
+source identifiers. The detailed contract is defined in `source-spans.md`.
+
 Planned identifier kinds include:
 
 ```text
@@ -337,8 +342,8 @@ compilation shall release owned resources and shall not publish partial output.
 
 State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, initial stage
-result types, and initial AST and IR validators are complete. The next planned
-sequence is:
+result types, initial AST source spans, and initial AST and IR validators are
+complete. The next planned sequence is:
 
 1. extend AST and IR validation with each new representation;
 2. expand in-process tests as additional context-owned state is introduced;

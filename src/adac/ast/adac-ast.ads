@@ -7,6 +7,8 @@
 with Ada.Containers.Vectors;
 with Ada.Strings.Unbounded;
 
+with Adac.Source;
+
 package Adac.AST is
 
   type Statement_Kind is
@@ -15,6 +17,7 @@ package Adac.AST is
 
   type Statement is record
     kind : Statement_Kind;
+    span : Adac.Source.Span := Adac.Source.INVALID_SPAN;
   end record;
 
   package Statement_Vectors is new Ada.Containers.Vectors
@@ -27,6 +30,7 @@ package Adac.AST is
     procedure_name : Ada.Strings.Unbounded.Unbounded_String;
     statements     : Statement_List;
     end_name       : Ada.Strings.Unbounded.Unbounded_String;
+    span           : Adac.Source.Span := Adac.Source.INVALID_SPAN;
   end record;
 
   --! summary

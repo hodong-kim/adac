@@ -31,4 +31,9 @@ package Adac.Compilation.Sources is
      pos      : Adac.Source.Position)
   return String;
 
+  --! summary: Validate a source span owned by this compilation context.
+  procedure validate_span
+    (self  : Context;
+     value : Adac.Source.Span);
+
 end Adac.Compilation.Sources;

@@ -9,6 +9,7 @@ package body Adac.IR.Builder is
   function build (unit : Adac.AST.Compilation_Unit) return Adac.IR.Module is
     module : Adac.IR.Module;
   begin
+    Adac.AST.validate (unit);
     module.entry_name := unit.procedure_name;
 
     for statement of unit.statements loop

@@ -88,30 +88,37 @@ package body Adac.Frontend.Parser is
     (self    : in out Parser;
      context : in out Adac.Compilation.Context)
   is
+    first          : constant Adac.Source.Position := self.current.position;
+    last           : Adac.Source.Position;
+    statement_kind : Adac.AST.Statement_Kind := Adac.AST.Null_Statement;
   begin
     case self.current.kind is
       when Tok_Null =>
+        statement_kind := Adac.AST.Null_Statement;
         expect (self, context, Tok_Null);
 
-        if not self.failed then
-          self.unit.statements.append
-            (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
-        end if;
-
       when Tok_Return =>
+        statement_kind := Adac.AST.Return_Statement;
         expect (self, context, Tok_Return);
-
-        if not self.failed then
-          self.unit.statements.append
-            (Adac.AST.Statement'(kind => Adac.AST.Return_Statement));
-        end if;
 
       when others =>
         report_expected (self, context, Tok_Null);
         return;
     end case;
 
+    if self.failed then
+      return;
+    end if;
+
+    last := self.current.position;
     expect (self, context, Tok_Semicolon);
+
+    if not self.failed then
+      self.unit.statements.append
+        (Adac.AST.Statement'
+           (kind => statement_kind,
+            span => Adac.Source.make_span (first, last)));
+    end if;
   end parse_statement;
 
   procedure parse_statement_sequence
@@ -133,6 +140,8 @@ package body Adac.Frontend.Parser is
     (self    : in out Parser;
      context : in out Adac.Compilation.Context)
   is
+    first : constant Adac.Source.Position := self.current.position;
+    last  : Adac.Source.Position;
   begin
     expect (self, context, Tok_Procedure);
 
@@ -153,7 +162,17 @@ package body Adac.Frontend.Parser is
     end if;
 
     expect (self, context, Tok_Identifier);
+
+    if not self.failed then
+      last := self.current.position;
+    end if;
+
     expect (self, context, Tok_Semicolon);
+
+    if not self.failed then
+      self.unit.span := Adac.Source.make_span (first, last);
+    end if;
+
     expect (self, context, Tok_EOF);
   end parse_compilation_unit;
 

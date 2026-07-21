@@ -20,6 +20,9 @@ The current minimal `Adac.AST.Compilation_Unit` is valid only when:
 - `procedure_name` is not empty;
 - `end_name` is not empty;
 - `statements` contains at least one statement.
+- the compilation-unit source span is structurally valid;
+- every statement source span is structurally valid and contained by the unit
+  span.
 
 Every `Statement` contains an Ada enumeration value, so ordinary construction
 already constrains its kind to the declared `Statement_Kind` values.
@@ -41,12 +44,17 @@ malformed representation.
 
 `Adac.Sema.analyze` validates its borrowed compilation unit before performing
 semantic checks. This protects the semantic boundary when a caller supplies a
-compilation unit from another internal producer.
+compilation unit from another internal producer. It additionally validates
+span ownership through the source registry in its compilation context.
+
+`Adac.IR.Builder.build` repeats structural AST validation before lowering. The
+builder does not receive a compilation context, so source-registry ownership
+must already have been established by successful semantic analysis.
 
 Validation does not transfer ownership and does not modify the compilation
-unit. The initial checks are constant time. Future checks that traverse the AST
-shall remain deterministic and bounded by the size of the validated
-representation or by documented compilation resource limits.
+unit. Validation is linear in the number of statements and allocates no
+storage. Future checks shall remain deterministic and bounded by the size of
+the validated representation or by documented compilation resource limits.
 
 ## Failure Contract
 
@@ -62,6 +70,8 @@ In-process tests shall cover:
 - an empty procedure name;
 - an empty end name;
 - an empty statement list;
+- invalid and non-containing source spans;
+- a source span owned by another compilation context;
 - structurally valid but semantically mismatched names;
 - deterministic rejection through `Program_Error`.
 

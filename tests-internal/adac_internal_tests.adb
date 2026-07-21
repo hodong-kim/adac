@@ -12,6 +12,7 @@ with Adac.Compilation.Diagnostics;
 with Adac.Compilation.Sources;
 with Adac.Frontend;
 with Adac.IR;
+with Adac.IR.Builder;
 with Adac.Language;
 with Adac.Sema;
 with Adac.Source;
@@ -19,6 +20,7 @@ with Adac.Source;
 procedure adac_internal_tests is
 
   use type Adac.Source.Source_File_ID;
+  use type Adac.Source.Position;
   use type Adac.Frontend.Parse_Status;
   use type Adac.Sema.Analysis_Result;
 
@@ -41,6 +43,25 @@ procedure adac_internal_tests is
       raise Program_Error with message;
     end if;
   end require;
+
+  procedure initialize_minimal_unit
+    (value          : in out Adac.AST.Compilation_Unit;
+     procedure_name : String;
+     end_name       : String;
+     unit_span      : Adac.Source.Span;
+     statement_span : Adac.Source.Span)
+  is
+  begin
+    value.procedure_name :=
+      Ada.Strings.Unbounded.to_unbounded_string (procedure_name);
+    value.end_name :=
+      Ada.Strings.Unbounded.to_unbounded_string (end_name);
+    value.span := unit_span;
+    value.statements.append
+      (Adac.AST.Statement'
+         (kind => Adac.AST.Null_Statement,
+          span => statement_span));
+  end initialize_minimal_unit;
 
   function accepts_language_options
     (context : Adac.Compilation.Context) return Boolean
@@ -101,6 +122,37 @@ procedure adac_internal_tests is
       return False;
   end accepts_file_id;
 
+  function accepts_span
+    (first : Adac.Source.Position;
+     last  : Adac.Source.Position)
+  return Boolean is
+  begin
+    declare
+      span : constant Adac.Source.Span :=
+        Adac.Source.make_span (first, last);
+      pragma unreferenced (span);
+    begin
+      null;
+    end;
+
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_span;
+
+  function accepts_span
+    (context : Adac.Compilation.Context;
+     value   : Adac.Source.Span)
+  return Boolean is
+  begin
+    Adac.Compilation.Sources.validate_span (context, value);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_span;
+
   function accepts_unit
     (value : Adac.AST.Compilation_Unit) return Boolean
   is
@@ -111,6 +163,33 @@ procedure adac_internal_tests is
     when Program_Error =>
       return False;
   end accepts_unit;
+
+  function accepts_analysis
+    (context : in out Adac.Compilation.Context;
+     unit    : Adac.AST.Compilation_Unit)
+  return Boolean is
+    result : Adac.Sema.Analysis_Result;
+    pragma unreferenced (result);
+  begin
+    result := Adac.Sema.analyze (context, unit);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_analysis;
+
+  function accepts_lowering
+    (unit : Adac.AST.Compilation_Unit) return Boolean
+  is
+    module : Adac.IR.Module;
+    pragma unreferenced (module);
+  begin
+    module := Adac.IR.Builder.build (unit);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_lowering;
 
   function accepts_module (module : Adac.IR.Module) return Boolean is
   begin
@@ -193,6 +272,12 @@ begin
                   (context_b, "alpha.adb");
     position : constant Adac.Source.Position
              := Adac.Source.make_position (source_a, 7, 9);
+    last_position : constant Adac.Source.Position
+                  := Adac.Source.make_position (source_a, 8, 2);
+    foreign_position : constant Adac.Source.Position
+                     := Adac.Source.make_position (source_b, 8, 2);
+    span : constant Adac.Source.Span :=
+      Adac.Source.make_span (position, last_position);
   begin
     require
       (source_a = source_a_again,
@@ -228,6 +313,22 @@ begin
       (not accepts_file_id
          (context_a, Adac.Source.INVALID_SOURCE_FILE_ID),
        "context A accepted the invalid source identifier");
+    require
+      (Adac.Source.first_position (span) = position and then
+       Adac.Source.last_position (span) = last_position,
+       "source span endpoints changed during construction");
+    require
+      (accepts_span (context_a, span),
+       "source registry rejected its own span");
+    require
+      (not accepts_span (context_b, span),
+       "source registry accepted a foreign span");
+    require
+      (not accepts_span (last_position, position),
+       "source span accepted reversed endpoints");
+    require
+      (not accepts_span (position, foreign_position),
+       "source span accepted endpoints from different files");
   end;
 
   declare
@@ -246,14 +347,18 @@ begin
 
   declare
     context : Adac.Compilation.Context := new_context;
+    file_id : constant Adac.Source.Source_File_ID :=
+      Adac.Compilation.Sources.register_file (context, "matching.adb");
+    unit_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 1, 1),
+       Adac.Source.make_position (file_id, 4, 9));
+    statement_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 3, 3),
+       Adac.Source.make_position (file_id, 3, 7));
     unit    : Adac.AST.Compilation_Unit;
   begin
-    unit.procedure_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("Main");
-    unit.end_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    unit.statements.append
-      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
+    initialize_minimal_unit
+      (unit, "Main", "main", unit_span, statement_span);
 
     require
       (Adac.Sema.analyze (context, unit) =
@@ -266,14 +371,18 @@ begin
 
   declare
     context : Adac.Compilation.Context := new_context (True);
+    file_id : constant Adac.Source.Source_File_ID :=
+      Adac.Compilation.Sources.register_file (context, "case-sensitive.adb");
+    unit_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 1, 1),
+       Adac.Source.make_position (file_id, 4, 9));
+    statement_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 3, 3),
+       Adac.Source.make_position (file_id, 3, 7));
     unit    : Adac.AST.Compilation_Unit;
   begin
-    unit.procedure_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("Main");
-    unit.end_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    unit.statements.append
-      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
+    initialize_minimal_unit
+      (unit, "Main", "main", unit_span, statement_span);
 
     require
       (Adac.Sema.analyze (context, unit) =
@@ -285,32 +394,46 @@ begin
   end;
 
   declare
+    context : Adac.Compilation.Context := new_context;
+    file_id : constant Adac.Source.Source_File_ID :=
+      Adac.Compilation.Sources.register_file (context, "ast-validation.adb");
+    unit_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 1, 1),
+       Adac.Source.make_position (file_id, 4, 9));
+    statement_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 3, 3),
+       Adac.Source.make_position (file_id, 3, 7));
+    outside_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 5, 1),
+       Adac.Source.make_position (file_id, 5, 5));
     valid_unit      : Adac.AST.Compilation_Unit;
     empty_procedure : Adac.AST.Compilation_Unit;
     empty_end       : Adac.AST.Compilation_Unit;
     empty_body      : Adac.AST.Compilation_Unit;
+    invalid_span    : Adac.AST.Compilation_Unit;
+    outside_child   : Adac.AST.Compilation_Unit;
   begin
-    valid_unit.procedure_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    valid_unit.end_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    valid_unit.statements.append
-      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
-
-    empty_procedure.end_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    empty_procedure.statements.append
-      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
-
-    empty_end.procedure_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    empty_end.statements.append
-      (Adac.AST.Statement'(kind => Adac.AST.Null_Statement));
+    initialize_minimal_unit
+      (valid_unit, "main", "main", unit_span, statement_span);
+    initialize_minimal_unit
+      (empty_procedure, "", "main", unit_span, statement_span);
+    initialize_minimal_unit
+      (empty_end, "main", "", unit_span, statement_span);
 
     empty_body.procedure_name :=
       Ada.Strings.Unbounded.to_unbounded_string ("main");
     empty_body.end_name :=
       Ada.Strings.Unbounded.to_unbounded_string ("main");
+    empty_body.span := unit_span;
+
+    initialize_minimal_unit
+      (invalid_span,
+       "main",
+       "main",
+       Adac.Source.INVALID_SPAN,
+       statement_span);
+    initialize_minimal_unit
+      (outside_child, "main", "main", unit_span, outside_span);
 
     require
       (accepts_unit (valid_unit),
@@ -324,6 +447,37 @@ begin
     require
       (not accepts_unit (empty_body),
        "AST validator accepted an empty statement list");
+    require
+      (not accepts_unit (invalid_span),
+       "AST validator accepted an invalid unit span");
+    require
+      (not accepts_lowering (invalid_span),
+       "IR builder accepted an invalid AST span");
+    require
+      (not accepts_unit (outside_child),
+       "AST validator accepted a statement outside its unit span");
+  end;
+
+  declare
+    owner_context   : Adac.Compilation.Context := new_context;
+    foreign_context : Adac.Compilation.Context := new_context;
+    file_id : constant Adac.Source.Source_File_ID :=
+      Adac.Compilation.Sources.register_file
+        (owner_context, "foreign-span.adb");
+    unit_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 1, 1),
+       Adac.Source.make_position (file_id, 4, 9));
+    statement_span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 3, 3),
+       Adac.Source.make_position (file_id, 3, 7));
+    unit : Adac.AST.Compilation_Unit;
+  begin
+    initialize_minimal_unit
+      (unit, "main", "main", unit_span, statement_span);
+
+    require
+      (not accepts_analysis (foreign_context, unit),
+       "semantic analysis accepted a foreign source span");
   end;
 
   declare
@@ -344,6 +498,30 @@ begin
           (Ada.Strings.Unbounded.to_string (result.unit.procedure_name) =
            "main",
            "successful parse returned the wrong AST payload");
+
+        declare
+          unit_first : constant Adac.Source.Position :=
+            Adac.Source.first_position (result.unit.span);
+          unit_last : constant Adac.Source.Position :=
+            Adac.Source.last_position (result.unit.span);
+          statement : constant Adac.AST.Statement :=
+            result.unit.statements.first_element;
+          statement_first : constant Adac.Source.Position :=
+            Adac.Source.first_position (statement.span);
+          statement_last : constant Adac.Source.Position :=
+            Adac.Source.last_position (statement.span);
+        begin
+          require
+            (unit_first.line = 1 and then unit_first.column = 1 and then
+             unit_last.line = 4 and then unit_last.column = 9,
+             "parser returned the wrong compilation-unit span");
+          require
+            (statement_first.line = 3 and then
+             statement_first.column = 3 and then
+             statement_last.line = 3 and then
+             statement_last.column = 7,
+             "parser returned the wrong statement span");
+        end;
     end case;
   end;
 

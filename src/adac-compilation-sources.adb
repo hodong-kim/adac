@@ -39,4 +39,13 @@ package body Adac.Compilation.Sources is
     return Adac.Source.position_image (self.source_registry, pos);
   end position_image;
 
+  procedure validate_span
+    (self  : Context;
+     value : Adac.Source.Span)
+  is
+  begin
+    Adac.Compilation.validate (self);
+    Adac.Source.validate (self.source_registry, value);
+  end validate_span;
+
 end Adac.Compilation.Sources;
