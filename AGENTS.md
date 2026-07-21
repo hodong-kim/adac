@@ -113,6 +113,39 @@ expected and actual test fixtures. Use commit subjects in the form
 Do not push, create branches, amend commits, rebase, or rewrite history unless
 the user explicitly requests that specific operation.
 
+## Interruption And Resumption
+
+An execution limit, credit exhaustion, process termination, context reset, or
+other interruption does not make incomplete work complete and does not
+authorize discarding it. `AGENTS.md` cannot bypass platform limits or restart
+an agent automatically. A later invocation shall recover from repository state
+before continuing.
+
+At the start of every resumed run, before selecting new work:
+
+1. Re-read `AGENTS.md`, the roadmap, and documents relevant to the apparent
+   in-progress work.
+2. Inspect `git status --short`, unstaged and staged diffs, the diff summary,
+   and recent commits.
+3. Compare the working tree with the latest green commit and the earliest unmet
+   roadmap prerequisite.
+4. If the tree is clean, resume from the next unmet work item. If it is dirty,
+   determine and finish the coherent in-progress slice before starting another
+   slice.
+5. Preserve unrelated user changes. If ownership or intent of overlapping
+   changes cannot be established safely, stop and report the ambiguity.
+
+Never create an incomplete or failing checkpoint commit merely to record
+progress. Commit only a coherent slice whose applicable checks pass. If an
+interruption occurs before that point, leave the working tree intact; on
+resumption, inspect and continue those changes rather than resetting,
+duplicating, or silently replacing them.
+
+Before a planned stop, report the current slice, completed commits, remaining
+work, validation already run, and any command still in progress. Update the
+roadmap only for durable changes in implementation status, not as a temporary
+session log.
+
 ## Stop Conditions
 
 Stop the autonomous loop only when one of the following conditions applies:
