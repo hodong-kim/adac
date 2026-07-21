@@ -5,13 +5,13 @@
 -- ============================================================================
 
 with Adac.AST;
-with Adac.Language;
+with Adac.Compilation;
 
 package Adac.Sema is
 
   function analyze
-    (unit             : Adac.AST.Compilation_Unit;
-     language_options : Adac.Language.Options)
+    (context : in out Adac.Compilation.Context;
+     unit    : Adac.AST.Compilation_Unit)
   return Boolean;
 
 end Adac.Sema;

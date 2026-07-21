@@ -4,6 +4,7 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
+with Adac.Diagnostics;
 with Adac.Language;
 
 package Adac.Compilation is
@@ -24,7 +25,8 @@ package Adac.Compilation is
 private
 
   type Context is limited record
-    options : Adac.Language.Options;
+    options          : Adac.Language.Options;
+    diagnostic_state : Adac.Diagnostics.State;
   end record;
 
 end Adac.Compilation;

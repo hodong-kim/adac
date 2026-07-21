@@ -5,6 +5,7 @@
 -- ============================================================================
 
 with Adac.AST;
+with Adac.Compilation;
 
 package Adac.Frontend is
 
@@ -13,6 +14,9 @@ package Adac.Frontend is
     unit : Adac.AST.Compilation_Unit;
   end record;
 
-  function parse_file (path : String) return Parse_Result;
+  function parse_file
+    (context : in out Adac.Compilation.Context;
+     path    : String)
+  return Parse_Result;
 
 end Adac.Frontend;

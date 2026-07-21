@@ -6,7 +6,9 @@
 
 with Ada.Characters.Handling;
 with Ada.Strings.Unbounded;
-with Adac.Diagnostics;
+
+with Adac.Compilation.Diagnostics;
+with Adac.Language;
 
 package body Adac.Sema is
 
@@ -25,17 +27,19 @@ package body Adac.Sema is
   end identifiers_match;
 
   function analyze
-    (unit             : Adac.AST.Compilation_Unit;
-     language_options : Adac.Language.Options)
+    (context : in out Adac.Compilation.Context;
+     unit    : Adac.AST.Compilation_Unit)
   return Boolean is
+    language_options : constant Adac.Language.Options
+                     := Adac.Compilation.language_options (context);
     procedure_name : constant String :=
       Ada.Strings.Unbounded.to_string (unit.procedure_name);
     end_name       : constant String :=
       Ada.Strings.Unbounded.to_string (unit.end_name);
   begin
     if not identifiers_match (procedure_name, end_name, language_options) then
-      Adac.Diagnostics.error
-        ("procedure name and end name do not match");
+      Adac.Compilation.Diagnostics.error
+        (context, "procedure name and end name do not match");
       return False;
     end if;
 

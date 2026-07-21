@@ -8,39 +8,44 @@ with Ada.Text_IO;
 
 package body Adac.Diagnostics is
 
-  total_errors : Natural := 0;
-
-  procedure reset is
+  function create return State is
   begin
-    total_errors := 0;
-  end reset;
+    return (total_errors => 0);
+  end create;
 
-  procedure error (message : String) is
+  procedure error
+    (self    : in out State;
+     message : String)
+  is
   begin
-    total_errors := total_errors + 1;
+    self.total_errors := self.total_errors + 1;
 
     Ada.Text_IO.put_line ("adac: error: " & message);
   end error;
 
-  procedure error (position : Adac.Source.Position;
-                  message  : String) is
+  procedure error
+    (self     : in out State;
+     position : Adac.Source.Position;
+     message  : String)
+  is
   begin
-    total_errors := total_errors + 1;
+    self.total_errors := self.total_errors + 1;
 
-    Ada.Text_IO.put_line ("adac: error: "
-                          & Adac.Source.position_image (position)
-                          & ": "
-                          & message);
+    Ada.Text_IO.put_line
+      ("adac: error: " &
+       Adac.Source.position_image (position) &
+       ": " &
+       message);
   end error;
 
-  function has_error return Boolean is
+  function has_error (self : State) return Boolean is
   begin
-    return total_errors /= 0;
+    return self.total_errors /= 0;
   end has_error;
 
-  function error_count return Natural is
+  function error_count (self : State) return Natural is
   begin
-    return total_errors;
+    return self.total_errors;
   end error_count;
 
 end Adac.Diagnostics;

@@ -34,22 +34,36 @@ emission.
 state will include owned stores and resources whose identity and cleanup must
 remain unambiguous.
 
-## Initial Implementation
+## Current Implementation
 
-The initial implementation deliberately contains only language options.
+The context currently owns language options and diagnostic state.
 
 ```text
 Compilation.Context
   language options
+  diagnostic state
 ```
 
 The driver creates one context for each compilation and keeps it alive while the
-existing frontend, semantic analysis, IR, and backend stages execute. Existing
-stage APIs continue to receive only the inputs they currently require.
+frontend, semantic analysis, IR, and backend stages execute. Stages that report
+source errors borrow the context for the duration of the call.
 
-The following state remains outside the context in this first change:
+`Adac.Diagnostics.State` defines the diagnostic state representation.
+`Adac.Compilation` composes that state into `Context`, while
+`Adac.Compilation.Diagnostics` provides context-scoped diagnostic operations.
+This dependency direction keeps diagnostic representation independent of the
+compilation package and avoids package-level mutable state.
 
-- diagnostics;
+A newly created context starts with zero diagnostics. A context is not reset for
+reuse, and diagnostic state from one context is not visible through another
+context.
+
+Diagnostic rendering still writes immediately to standard output. Independent
+error counts therefore do not yet make concurrent output rendering atomic or
+ordered across threads.
+
+The following state remains outside the context:
+
 - source files and source text;
 - AST and semantic storage;
 - type information;
@@ -63,18 +77,22 @@ Unused placeholder fields shall not be added to the context.
 
 ## Responsibilities
 
-The context is the long-term owner of state whose lifetime spans compiler stages
-or whose identity must be isolated from other compilations.
+The context owns state whose lifetime spans compiler stages or whose identity
+must be isolated from other compilations.
+
+Current context-owned state includes:
+
+- diagnostic state;
+- language options.
 
 Planned context-owned state includes:
 
-- diagnostic state;
 - source file registry;
 - interned identifiers;
 - AST storage;
 - semantic entities and type information;
 - IR storage;
-- language and target options;
+- target options;
 - cancellation state;
 - resource accounting and limits.
 
@@ -271,29 +289,27 @@ compilation shall release owned resources and shall not publish partial output.
 ## Migration Sequence
 
 State shall move into the context in small, independently testable changes.
+The minimal context and diagnostic-state migration are complete. The next
+planned sequence is:
 
-The planned sequence is:
-
-1. introduce the minimal context and connect its lifetime to the driver;
-2. move diagnostic state into the context;
-3. add a source registry and `Source_File_ID`;
-4. introduce stage-specific result types;
-5. add AST or IR validation;
-6. add in-process tests for independent contexts;
-7. add cancellation and resource accounting when their contracts are defined.
+1. add a source registry and `Source_File_ID`;
+2. introduce stage-specific result types;
+3. add AST or IR validation;
+4. expand in-process tests as additional context-owned state is introduced;
+5. add cancellation and resource accounting when their contracts are defined.
 
 The sequence may change when implementation constraints require it, but each
 change shall preserve existing frontend, AST, semantic, IR, backend, failure,
 and target boundaries.
 
-## Initial Completion Criteria
+## Diagnostic Migration Completion Criteria
 
-The first context change is complete when:
+The diagnostic migration is complete when:
 
-- `Adac.Compilation.Context` is a limited private type;
-- the driver creates one context for each compilation;
-- language options are read from the context during the pipeline;
-- existing diagnostics behavior remains unchanged;
-- existing compiler output and exit behavior remain unchanged;
-- no new process-global mutable state is introduced;
+- every compilation context owns independent diagnostic state;
+- a new context starts with zero errors without a reset operation;
+- parser, semantic, driver, and backend-boundary diagnostics use that context;
+- diagnostics from one context do not change another context's error count;
+- existing compiler diagnostic text and exit behavior remain unchanged;
+- no package-level mutable diagnostic state remains;
 - repository checks pass.

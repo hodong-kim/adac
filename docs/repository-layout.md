@@ -55,6 +55,10 @@ adac/
       support/
   tests/
     minimal/
+  tests-internal/
+    adac_internal_tests.gpr
+    adac_internal_tests.adb
+    expected.txt
 ```
 
 ## Package Hierarchy
@@ -82,7 +86,7 @@ Adac.Driver
   Command-line handling, compilation pipeline execution, top-level control.
 
 Adac.Compilation
-  Per-compilation ownership, language options, and lifecycle state.
+  Per-compilation ownership, diagnostics, options, and lifecycle state.
 
 Adac.Frontend
   Source input, lexer, parser, and frontend-level processing.
@@ -198,7 +202,10 @@ continue to follow the Clair naming rules.
 
 ## Test Layout
 
-Tests are organized by feature area and milestone.
+Tests are organized by feature area and milestone. Tests under `tests/` execute
+the compiler as an external program and verify user-visible behavior. Tests
+under `tests-internal/` execute compiler APIs in one process and verify internal
+ownership and isolation contracts.
 
 The initial minimal test uses:
 
@@ -219,6 +226,10 @@ begin
   null;
 end main;
 ```
+
+The internal test project builds a separate test executable. It shall not be a
+main of the production `adac.gpr` project. Internal tests may inspect public
+compiler contracts but should not depend on private representation details.
 
 ## Change Principles
 

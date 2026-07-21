@@ -8,15 +8,28 @@ with Adac.Source;
 
 package Adac.Diagnostics is
 
-  procedure reset;
+  type State is private;
 
-  procedure error (message : String);
+  --! summary: Create empty diagnostic state for one compilation.
+  function create return State;
 
-  procedure error (position : Adac.Source.Position;
-                   message  : String);
+  procedure error
+    (self    : in out State;
+     message : String);
 
-  function has_error return Boolean;
+  procedure error
+    (self     : in out State;
+     position : Adac.Source.Position;
+     message  : String);
 
-  function error_count return Natural;
+  function has_error (self : State) return Boolean;
+
+  function error_count (self : State) return Natural;
+
+private
+
+  type State is record
+    total_errors : Natural := 0;
+  end record;
 
 end Adac.Diagnostics;

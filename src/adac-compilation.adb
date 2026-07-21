@@ -3,14 +3,14 @@
 -- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
-
 package body Adac.Compilation is
 
   function create
     (language_options : Adac.Language.Options)
   return Context is
   begin
-    return (options => language_options);
+    return (options          => language_options,
+            diagnostic_state => Adac.Diagnostics.create);
   end create;
 
   function language_options

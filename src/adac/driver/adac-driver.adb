@@ -12,7 +12,7 @@ with Ada.Text_IO;
 
 with Adac.Backend;
 with Adac.Compilation;
-with Adac.Diagnostics;
+with Adac.Compilation.Diagnostics;
 with Adac.Frontend;
 with Adac.IR;
 with Adac.IR.Builder;
@@ -29,30 +29,29 @@ package body Adac.Driver is
        "[--case-sensitive-identifiers]");
   end print_usage;
 
-  procedure finish_with_failure is
+  procedure finish_with_failure (context : Adac.Compilation.Context) is
   begin
     Ada.Text_IO.put_line
       ("adac: diagnostics " &
-       Adac.Support.image (Adac.Diagnostics.error_count) &
+       Adac.Support.image
+         (Adac.Compilation.Diagnostics.error_count (context)) &
        " error(s)");
 
     Ada.Command_Line.set_exit_status (Ada.Command_Line.Failure);
   end finish_with_failure;
 
   procedure compile_file
-    (context     : Adac.Compilation.Context;
+    (context     : in out Adac.Compilation.Context;
      input_path  : String;
      output_path : String)
   is
     result : Adac.Frontend.Parse_Result;
     module : Adac.IR.Module;
   begin
-    Adac.Diagnostics.reset;
-
     Ada.Text_IO.put_line ("adac: parsing " & input_path);
 
     begin
-      result := Adac.Frontend.parse_file (input_path);
+      result := Adac.Frontend.parse_file (context, input_path);
     exception
       when Ada.IO_Exceptions.Name_Error |
            Ada.IO_Exceptions.Use_Error |
@@ -60,24 +59,21 @@ package body Adac.Driver is
            Ada.IO_Exceptions.End_Error |
            Ada.IO_Exceptions.Data_Error |
            Ada.IO_Exceptions.Layout_Error =>
-        Adac.Diagnostics.error
-          ("unable to read input file: " & input_path);
-        finish_with_failure;
+        Adac.Compilation.Diagnostics.error
+          (context, "unable to read input file: " & input_path);
+        finish_with_failure (context);
         return;
     end;
 
     if not result.ok then
-      finish_with_failure;
+      finish_with_failure (context);
       return;
     end if;
 
     Ada.Text_IO.put_line ("adac: parse ok");
 
-    if not Adac.Sema.analyze
-      (result.unit,
-       Adac.Compilation.language_options (context))
-    then
-      finish_with_failure;
+    if not Adac.Sema.analyze (context, result.unit) then
+      finish_with_failure (context);
       return;
     end if;
 
@@ -94,24 +90,26 @@ package body Adac.Driver is
       end if;
     exception
       when error : Adac.Backend.Operational_Error =>
-        Adac.Diagnostics.error
-          (Ada.Exceptions.exception_message (error));
-        finish_with_failure;
+        Adac.Compilation.Diagnostics.error
+          (context, Ada.Exceptions.exception_message (error));
+        finish_with_failure (context);
         return;
 
       when Ada.IO_Exceptions.Name_Error |
            Ada.IO_Exceptions.Use_Error |
            Ada.IO_Exceptions.Device_Error =>
-        Adac.Diagnostics.error
-          ("I/O failure during backend emission: " & output_path);
-        finish_with_failure;
+        Adac.Compilation.Diagnostics.error
+          (context,
+           "I/O failure during backend emission: " & output_path);
+        finish_with_failure (context);
         return;
     end;
 
     Ada.Text_IO.put_line ("adac: backend ok");
     Ada.Text_IO.put_line
       ("adac: diagnostics " &
-       Adac.Support.image (Adac.Diagnostics.error_count) &
+       Adac.Support.image
+         (Adac.Compilation.Diagnostics.error_count (context)) &
        " error(s)");
   end compile_file;
 
@@ -141,8 +139,8 @@ package body Adac.Driver is
         (if options.has_output
          then Ada.Strings.Unbounded.to_string (options.output_path)
          else "a.out");
-      context : constant Adac.Compilation.Context
-              := Adac.Compilation.create (options.language_options);
+      context : Adac.Compilation.Context :=
+        Adac.Compilation.create (options.language_options);
     begin
       compile_file (context, input_path, output_path);
     end;

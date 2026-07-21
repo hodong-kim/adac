@@ -14,6 +14,8 @@ include FileUtils
 
 SRC_TOP      = __dir__
 PROJECT     = File.join(SRC_TOP, "adac.gpr")
+INTERNAL_TEST_PROJECT =
+  File.join(SRC_TOP, "tests-internal", "adac_internal_tests.gpr")
 BUILD_ROOT  = "build"
 
 SUPPORTED_TARGET_OS = %w[freebsd linux darwin windows android].freeze
@@ -280,6 +282,11 @@ TARGET_EXE_EXT = TARGET_OS == "windows" ? ".exe" : ""
 
 ADAC_EXE       = File.join(TARGET_BIN_DIR, "adac#{TARGET_EXE_EXT}")
 ADAC_STYLE_EXE = File.join(TARGET_BIN_DIR, "adac-style#{TARGET_EXE_EXT}")
+ADAC_INTERNAL_TEST_EXE =
+  File.join(TARGET_BIN_DIR, "adac-internal-tests#{TARGET_EXE_EXT}")
+INTERNAL_TEST_OBJ_DIR = File.join(TARGET_OBJ_DIR, "internal-tests")
+INTERNAL_TEST_ACTUAL = File.join(SRC_TOP, "tests-internal", "actual.txt")
+INTERNAL_TEST_EXPECT = File.join(SRC_TOP, "tests-internal", "expected.txt")
 
 # Bypasses Rake's default task resolution for undefined arguments,
 # enabling custom CLI parameter passing (e.g. `rake plat src`).
@@ -287,7 +294,7 @@ ARGV.drop(1).each do |arg|
   task arg.to_sym do; end unless Rake::Task.task_defined?(arg)
 end
 
-def gpr_switches
+def gpr_switches(project = PROJECT)
   switches = []
   switches << "--target=#{GPR_TARGET}" if GPR_TARGET
   switches << "-XADAC_TARGET=#{TARGET}"
@@ -295,7 +302,7 @@ def gpr_switches
   switches << "-XADAC_BUILD_PROFILE=#{BUILD_PROFILE}"
   switches << "-XADAC_GENERATED_SOURCE_DIR=#{GENERATED_SOURCE_DIR}"
   switches << "-P"
-  switches << PROJECT
+  switches << project
   switches
 end
 
@@ -310,6 +317,17 @@ def build_project
   mkdir_p [TARGET_OBJ_DIR, TARGET_BIN_DIR, GENERATED_SOURCE_DIR]
   generate_build_config
   sh(*(GPRBUILD + gpr_switches))
+end
+
+def run_internal_tests
+  mkdir_p [INTERNAL_TEST_OBJ_DIR, TARGET_BIN_DIR]
+  rm_f INTERNAL_TEST_ACTUAL
+  sh(*(GPRBUILD + gpr_switches(INTERNAL_TEST_PROJECT)))
+
+  retval = system(ADAC_INTERNAL_TEST_EXE, out: INTERNAL_TEST_ACTUAL)
+  abort "internal compiler tests failed" unless retval
+
+  sh "diff", "-u", INTERNAL_TEST_EXPECT, INTERNAL_TEST_ACTUAL
 end
 
 def clean_project
@@ -558,6 +576,8 @@ task :test do
       rm_rf output_path if output_is_directory
     end
   end
+
+  run_internal_tests
 end
 
 desc "Run the style checker over project sources"
@@ -567,7 +587,9 @@ task :style do
 
   files = FileList[
     "src/**/*.adb",
-    "src/**/*.ads"
+    "src/**/*.ads",
+    "tests-internal/**/*.adb",
+    "tests-internal/**/*.ads"
   ]
 
   sh ADAC_STYLE_EXE, *files
@@ -628,6 +650,8 @@ task :clean do
   FileList["tests-style/**/actual.txt"].each do |path|
     rm_f path
   end
+
+  rm_f INTERNAL_TEST_ACTUAL
 
   FileList["tests/**/*.s", "tests/**/main"].each do |path|
     rm_f path
