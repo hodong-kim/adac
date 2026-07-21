@@ -11,6 +11,7 @@ package body Adac.Compilation.Sources is
      path : String)
   return Adac.Source.Source_File_ID is
   begin
+    Adac.Compilation.validate (self);
     return Adac.Source.register_file (self.source_registry, path);
   end register_file;
 
@@ -19,11 +20,13 @@ package body Adac.Compilation.Sources is
      file_id : Adac.Source.Source_File_ID)
   return String is
   begin
+    Adac.Compilation.validate (self);
     return Adac.Source.file_path (self.source_registry, file_id);
   end file_path;
 
   function file_count (self : Context) return Natural is
   begin
+    Adac.Compilation.validate (self);
     return Adac.Source.file_count (self.source_registry);
   end file_count;
 
@@ -32,6 +35,7 @@ package body Adac.Compilation.Sources is
      pos      : Adac.Source.Position)
   return String is
   begin
+    Adac.Compilation.validate (self);
     return Adac.Source.position_image (self.source_registry, pos);
   end position_image;
 

@@ -50,6 +50,13 @@ The driver creates one context for each compilation and keeps it alive while the
 frontend, semantic analysis, IR, and backend stages execute. Stages that report
 source errors borrow the context for the duration of the call.
 
+`Adac.Compilation.create` is the only operation that constructs a valid
+context. Ada permits a caller to default-initialize the limited private type,
+but that object remains uninitialized and shall not be passed to a context
+operation. Every public context operation validates this state and raises
+`Program_Error` before reading or modifying owned state when the object was not
+created.
+
 `Adac.Diagnostics.State` defines the diagnostic state representation.
 `Adac.Compilation` composes that state into `Context`, while
 `Adac.Compilation.Diagnostics` provides context-scoped diagnostic operations.
@@ -131,6 +138,8 @@ One context represents one compilation attempt.
 The conceptual lifecycle is:
 
 ```text
+uninitialized
+  -> created
 created
   -> frontend
   -> semantic analysis
@@ -142,8 +151,10 @@ created
 A compilation may instead enter a failed or cancelled terminal state from any
 stage.
 
-The first implementation does not store this state machine. A stored state shall
-be introduced only with operations and validators that enforce its transitions.
+The initial stored state distinguishes only `uninitialized` from `created` and
+enforces construction through `Adac.Compilation.create`. It does not yet record
+pipeline stages, completion, failure, or cancellation. Those transitions shall
+be introduced only with operations and validators that enforce them.
 
 A context shall not be reset and reused for an unrelated compilation. A new
 compilation receives a new context with clean owned state.
@@ -299,7 +310,7 @@ extension rules are defined in `ir-validation.md`.
 
 Planned validators include:
 
-- context state validator;
+- additional context state validators as lifecycle transitions are stored;
 - additional AST validators as syntax representations grow;
 - additional IR validators as typed and control-flow representations grow.
 

@@ -42,6 +42,48 @@ procedure adac_internal_tests is
     end if;
   end require;
 
+  function accepts_language_options
+    (context : Adac.Compilation.Context) return Boolean
+  is
+  begin
+    declare
+      options : constant Adac.Language.Options :=
+        Adac.Compilation.language_options (context);
+      pragma unreferenced (options);
+    begin
+      null;
+    end;
+
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_language_options;
+
+  function accepts_diagnostic_write
+    (context : in out Adac.Compilation.Context) return Boolean
+  is
+  begin
+    Adac.Compilation.Diagnostics.error (context, "uninitialized context");
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_diagnostic_write;
+
+  function accepts_source_registration
+    (context : in out Adac.Compilation.Context) return Boolean
+  is
+    file_id : Adac.Source.Source_File_ID;
+  begin
+    file_id := Adac.Compilation.Sources.register_file
+      (context, "uninitialized.adb");
+    return file_id /= Adac.Source.INVALID_SOURCE_FILE_ID;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_source_registration;
+
   function accepts_file_id
     (context : Adac.Compilation.Context;
      file_id : Adac.Source.Source_File_ID)
@@ -83,6 +125,20 @@ procedure adac_internal_tests is
   context_b : Adac.Compilation.Context := new_context;
 
 begin
+  declare
+    uninitialized : Adac.Compilation.Context;
+  begin
+    require
+      (not accepts_language_options (uninitialized),
+       "default-initialized context exposed language options");
+    require
+      (not accepts_diagnostic_write (uninitialized),
+       "default-initialized context accepted a diagnostic");
+    require
+      (not accepts_source_registration (uninitialized),
+       "default-initialized context accepted a source path");
+  end;
+
   require
     (Adac.Compilation.Diagnostics.error_count (context_a) = 0,
      "context A did not start with zero diagnostics");

@@ -26,9 +26,12 @@ package Adac.Compilation is
 private
 
   type Context is limited record
+    initialized      : Boolean := False;
     options          : Adac.Language.Options;
     diagnostic_state : Adac.Diagnostics.State;
     source_registry  : Adac.Source.Registry;
   end record;
+
+  procedure validate (self : Context);
 
 end Adac.Compilation;

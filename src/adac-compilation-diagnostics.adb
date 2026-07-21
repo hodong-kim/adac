@@ -14,6 +14,7 @@ package body Adac.Compilation.Diagnostics is
      message : String)
   is
   begin
+    Adac.Compilation.validate (self);
     Adac.Diagnostics.error (self.diagnostic_state, message);
   end error;
 
@@ -23,6 +24,7 @@ package body Adac.Compilation.Diagnostics is
      message  : String)
   is
   begin
+    Adac.Compilation.validate (self);
     Adac.Diagnostics.error
       (self.diagnostic_state,
        Adac.Compilation.Sources.position_image (self, position),
@@ -31,11 +33,13 @@ package body Adac.Compilation.Diagnostics is
 
   function has_error (self : Context) return Boolean is
   begin
+    Adac.Compilation.validate (self);
     return Adac.Diagnostics.has_error (self.diagnostic_state);
   end has_error;
 
   function error_count (self : Context) return Natural is
   begin
+    Adac.Compilation.validate (self);
     return Adac.Diagnostics.error_count (self.diagnostic_state);
   end error_count;
 
