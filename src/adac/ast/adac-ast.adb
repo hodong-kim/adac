@@ -6,6 +6,8 @@
 
 with Ada.Containers;
 
+with Adac.Resources;
+
 package body Adac.AST is
 
   use type Ada.Containers.Count_Type;
@@ -43,6 +45,17 @@ package body Adac.AST is
     return (owner => self.marker'Unchecked_Access,
             index => Natural(self.nodes.length) + 1);
   end next_node_id;
+
+  procedure require_node_capacity
+    (self          : Store;
+     maximum_nodes : Natural)
+  is
+  begin
+    if Natural(self.nodes.length) >= maximum_nodes then
+      raise Adac.Resources.Limit_Exceeded with
+        "Adac.AST: node limit exceeded";
+    end if;
+  end require_node_capacity;
 
   procedure require_compilation_unit
     (self : Store;
@@ -90,15 +103,26 @@ package body Adac.AST is
   end list_element;
 
   function append_statement
-    (self : in out Store;
-     kind : Node_Kind;
-     span : Adac.Source.Span)
+    (self          : in out Store;
+     kind          : Node_Kind;
+     span          : Adac.Source.Span;
+     maximum_nodes : Natural := Natural'Last)
   return Node_ID is
     result : Node_ID;
   begin
     validate_store (self);
 
     Adac.Source.validate (span);
+
+    case kind is
+      when Null_Statement_Node | Return_Statement_Node =>
+        null;
+
+      when Compilation_Unit_Node =>
+        raise Program_Error with "Adac.AST: invalid statement node kind";
+    end case;
+
+    require_node_capacity (self, maximum_nodes);
     result := next_node_id (self);
 
     case kind is
@@ -111,7 +135,7 @@ package body Adac.AST is
           (Node'(kind => Return_Statement_Node, span => span));
 
       when Compilation_Unit_Node =>
-        raise Program_Error with "Adac.AST: invalid statement node kind";
+        raise Program_Error with "Adac.AST: unreachable statement node kind";
     end case;
 
     return result;
@@ -122,7 +146,8 @@ package body Adac.AST is
      procedure_symbol : Adac.Symbols.Symbol_ID;
      statements       : Node_List;
      end_symbol       : Adac.Symbols.Symbol_ID;
-     span             : Adac.Source.Span)
+     span             : Adac.Source.Span;
+     maximum_nodes    : Natural := Natural'Last)
   return Node_ID is
     result : Node_ID;
   begin
@@ -151,6 +176,7 @@ package body Adac.AST is
       end if;
     end loop;
 
+    require_node_capacity (self, maximum_nodes);
     result := next_node_id (self);
     self.nodes.append
       (Node'(kind             => Compilation_Unit_Node,

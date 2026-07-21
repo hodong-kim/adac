@@ -32,8 +32,8 @@ against the destination store before copying the list into the parent node.
 
 Parse failure does not roll back already appended nodes. Such unreachable nodes
 remain private to the failed compilation and are reclaimed with the context.
-This preserves stable IDs and simple failure cleanup. Future AST-node resource
-limits shall bound this storage for large invalid inputs.
+This preserves stable IDs and simple failure cleanup. The context-owned AST
+node budget defined in `resource-limits.md` bounds this storage.
 
 ## Construction
 
@@ -102,9 +102,11 @@ child list. Root validation is linear in the number of direct nodes currently
 represented and allocates no storage. Future recursive syntax shall retain
 work proportional to reachable nodes and shall be covered by resource limits.
 
-Representable node-index exhaustion raises `Storage_Error` before an ID wraps
-or a live ID is reused. An allocation failure may leave earlier nodes in the
-append-only store, but it must not publish a partially initialized node.
+Configured node-budget exhaustion raises `Adac.Resources.Limit_Exceeded` before
+an append and leaves the node count unchanged. Representable node-index or
+allocator exhaustion raises `Storage_Error` before an ID wraps or a live ID is
+reused. A failure may leave earlier nodes in the append-only store, but it must
+not publish a partially initialized node.
 
 Operations on one context are sequential until a stronger concurrency contract
 is introduced. Independent contexts share no AST store or mutable node state.

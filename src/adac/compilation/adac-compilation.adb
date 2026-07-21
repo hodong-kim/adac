@@ -6,12 +6,15 @@
 package body Adac.Compilation is
 
   function create
-    (language_options : Adac.Language.Options)
+    (language_options : Adac.Language.Options;
+     resource_limits  : Adac.Resources.Limits :=
+       Adac.Resources.DEFAULT_LIMITS)
   return Context is
   begin
     return (initialized      => True,
             ast_store        => Adac.AST.create,
             options          => language_options,
+            limits           => resource_limits,
             diagnostic_state => Adac.Diagnostics.create,
             source_registry  => Adac.Source.create,
             symbol_store     => Adac.Symbols.create
@@ -25,6 +28,14 @@ package body Adac.Compilation is
     validate (self);
     return self.options;
   end language_options;
+
+  function resource_limits
+    (self : Context)
+  return Adac.Resources.Limits is
+  begin
+    validate (self);
+    return self.limits;
+  end resource_limits;
 
   procedure validate (self : Context) is
   begin

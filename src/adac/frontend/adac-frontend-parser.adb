@@ -13,6 +13,7 @@ with Adac.Compilation.Symbols;
 with Adac.Compilation.Syntax;
 with Adac.Frontend.Lexer;
 with Adac.Frontend.Tokens;
+with Adac.Resources;
 with Adac.Source;
 with Adac.Symbols;
 
@@ -121,12 +122,19 @@ package body Adac.Frontend.Parser is
     expect (self, context, Tok_Semicolon);
 
     if not self.failed then
-      Adac.AST.append
-        (self.statements,
-         Adac.Compilation.Syntax.create_statement
-           (context,
-            statement_kind,
-            Adac.Source.make_span (first, last)));
+      begin
+        Adac.AST.append
+          (self.statements,
+           Adac.Compilation.Syntax.create_statement
+             (context,
+              statement_kind,
+              Adac.Source.make_span (first, last)));
+      exception
+        when Adac.Resources.Limit_Exceeded =>
+          self.failed := True;
+          Adac.Compilation.Diagnostics.error
+            (context, first, "AST node limit exceeded");
+      end;
     end if;
   end parse_statement;
 
@@ -204,18 +212,27 @@ package body Adac.Frontend.Parser is
       return (status => Adac.Frontend.Parse_Rejected);
     end if;
 
-    declare
-      root : constant Adac.AST.Node_ID :=
-        Adac.Compilation.Syntax.create_compilation_unit
-          (context,
-           self.procedure_symbol,
-           self.statements,
-           self.end_symbol,
-           self.unit_span);
     begin
-      Adac.Compilation.Syntax.validate (context, root);
-      return (status => Adac.Frontend.Parse_Succeeded,
-              root   => root);
+      declare
+        root : constant Adac.AST.Node_ID :=
+          Adac.Compilation.Syntax.create_compilation_unit
+            (context,
+             self.procedure_symbol,
+             self.statements,
+             self.end_symbol,
+             self.unit_span);
+      begin
+        Adac.Compilation.Syntax.validate (context, root);
+        return (status => Adac.Frontend.Parse_Succeeded,
+                root   => root);
+      end;
+    exception
+      when Adac.Resources.Limit_Exceeded =>
+        Adac.Compilation.Diagnostics.error
+          (context,
+           Adac.Source.first_position (self.unit_span),
+           "AST node limit exceeded");
+        return (status => Adac.Frontend.Parse_Rejected);
     end;
   exception
     when others =>

@@ -17,6 +17,7 @@ with Adac.Frontend;
 with Adac.IR;
 with Adac.IR.Builder;
 with Adac.Language;
+with Adac.Resources;
 with Adac.Sema;
 with Adac.Source;
 with Adac.Symbols;
@@ -32,13 +33,15 @@ procedure adac_internal_tests is
   use type Adac.Sema.Analysis_Result;
 
   function new_context
-    (case_sensitive_identifiers : Boolean := False)
+    (case_sensitive_identifiers : Boolean := False;
+     resource_limits : Adac.Resources.Limits :=
+       Adac.Resources.DEFAULT_LIMITS)
   return Adac.Compilation.Context
   is
     options : constant Adac.Language.Options :=
       (case_sensitive_identifiers => case_sensitive_identifiers);
   begin
-    return Adac.Compilation.create (options);
+    return Adac.Compilation.create (options, resource_limits);
   end new_context;
 
   procedure require
@@ -165,6 +168,46 @@ procedure adac_internal_tests is
     when Program_Error =>
       return False;
   end accepts_ast_query;
+
+  function rejects_invalid_statement_before_limit
+    (context : in out Adac.Compilation.Context;
+     span    : Adac.Source.Span)
+  return Boolean
+  is
+    node : Adac.AST.Node_ID;
+    pragma unreferenced (node);
+  begin
+    node := Adac.Compilation.Syntax.create_statement
+      (context, Adac.AST.Compilation_Unit_Node, span);
+    return False;
+  exception
+    when Program_Error =>
+      return True;
+
+    when Adac.Resources.Limit_Exceeded =>
+      return False;
+  end rejects_invalid_statement_before_limit;
+
+  function rejects_empty_unit_before_limit
+    (context : in out Adac.Compilation.Context;
+     symbol  : Adac.Symbols.Symbol_ID;
+     span    : Adac.Source.Span)
+  return Boolean
+  is
+    statements : Adac.AST.Node_List;
+    node       : Adac.AST.Node_ID;
+    pragma unreferenced (node);
+  begin
+    node := Adac.Compilation.Syntax.create_compilation_unit
+      (context, symbol, statements, symbol, span);
+    return False;
+  exception
+    when Program_Error =>
+      return True;
+
+    when Adac.Resources.Limit_Exceeded =>
+      return False;
+  end rejects_empty_unit_before_limit;
 
   function accepts_symbol
     (context : Adac.Compilation.Context;
@@ -307,6 +350,10 @@ begin
   require
     (Adac.Compilation.Diagnostics.error_count (context_b) = 0,
      "context B did not start with zero diagnostics");
+  require
+    (Adac.Compilation.resource_limits (context_a).maximum_ast_nodes =
+     Adac.Resources.DEFAULT_MAXIMUM_AST_NODES,
+     "context A did not receive the default AST node limit");
 
   Adac.Compilation.Diagnostics.error (context_a, "context A first error");
 
@@ -469,6 +516,66 @@ begin
     require
       (Adac.Compilation.Sources.file_count (context_c) = 0,
        "new context inherited source files from an earlier context");
+  end;
+
+  declare
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits => (maximum_ast_nodes => 0));
+    result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Rejected,
+       "zero AST node limit did not reject parsing");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 1,
+       "zero AST node limit did not record one diagnostic");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = 0,
+       "zero AST node limit published a statement node");
+  end;
+
+  declare
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits => (maximum_ast_nodes => 0));
+    file_id : constant Adac.Source.Source_File_ID :=
+      Adac.Compilation.Sources.register_file
+        (context, "limit-contract.adb");
+    span : constant Adac.Source.Span := Adac.Source.make_span
+      (Adac.Source.make_position (file_id, 1, 1),
+       Adac.Source.make_position (file_id, 1, 1));
+    symbol : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context, "main");
+  begin
+    require
+      (rejects_invalid_statement_before_limit (context, span),
+       "AST limit hid an invalid statement kind");
+    require
+      (rejects_empty_unit_before_limit (context, symbol, span),
+       "AST limit hid an empty compilation unit");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = 0,
+       "contract rejection published a node at zero AST limit");
+  end;
+
+  declare
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits => (maximum_ast_nodes => 1));
+    result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Rejected,
+       "one-node AST limit did not reject the unit root");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 1,
+       "one-node AST limit did not record one diagnostic");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = 1,
+       "one-node AST limit changed the store after root rejection");
   end;
 
   declare

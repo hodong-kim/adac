@@ -50,9 +50,9 @@ the source registry owned by its `Adac.Compilation.Context`. Semantic analysis
 and IR lowering both use this context-aware boundary. Passing a structurally
 valid span from another context is an internal compiler contract violation.
 
-Validation is linear in the number of AST nodes and allocates no storage.
-Future parser resource accounting shall bound the number of nodes before this
-walk becomes unbounded.
+Validation is linear in the number of reachable AST nodes and allocates no
+storage. The context-owned AST node budget bounds this work for the current
+representation.
 
 ## Failure Contract
 

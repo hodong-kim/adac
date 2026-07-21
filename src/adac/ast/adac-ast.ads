@@ -45,9 +45,10 @@ package Adac.AST is
   --! summary: Append one structurally valid statement node.
   --! contract: `kind` must identify a statement node.
   function append_statement
-    (self : in out Store;
-     kind : Node_Kind;
-     span : Adac.Source.Span)
+    (self          : in out Store;
+     kind          : Node_Kind;
+     span          : Adac.Source.Span;
+     maximum_nodes : Natural := Natural'Last)
   return Node_ID;
 
   --! summary: Append one structurally valid compilation-unit root.
@@ -59,7 +60,8 @@ package Adac.AST is
      procedure_symbol : Adac.Symbols.Symbol_ID;
      statements       : Node_List;
      end_symbol       : Adac.Symbols.Symbol_ID;
-     span             : Adac.Source.Span)
+     span             : Adac.Source.Span;
+     maximum_nodes    : Natural := Natural'Last)
   return Node_ID;
 
   --! summary: Return the number of nodes owned by the store.

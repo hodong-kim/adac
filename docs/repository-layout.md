@@ -45,6 +45,7 @@ adac/
     compiler-symbols.md
     failure-model.md
     ir-validation.md
+    resource-limits.md
     repository-layout.md
     roadmap.md
     source-spans.md
@@ -88,6 +89,7 @@ Adac.Diagnostics
 Adac.Source
 Adac.Symbols
 Adac.Support
+Adac.Resources
 ```
 
 Responsibilities:
@@ -128,6 +130,9 @@ Adac.Symbols
 
 Adac.Support
   Small shared utilities used across the project.
+
+Adac.Resources
+  Immutable compilation resource-limit policy and exhaustion signal.
 ```
 
 ## Child Packages And Directories

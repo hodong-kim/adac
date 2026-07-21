@@ -36,12 +36,14 @@ unambiguous.
 
 ## Current Implementation
 
-The context currently owns language options, diagnostic state, a source file
-registry, an interned symbol store, and an append-only AST store.
+The context currently owns language options, immutable resource limits,
+diagnostic state, a source file registry, an interned symbol store, and an
+append-only AST store.
 
 ```text
 Compilation.Context
   language options
+  resource limits
   diagnostic state
   source file registry
   symbol store
@@ -90,7 +92,7 @@ The following state remains outside the context:
 - IR storage;
 - target configuration;
 - cancellation state;
-- resource limits.
+- resource counters other than AST node count.
 
 These items shall be moved only when their own contracts and tests are added.
 Unused placeholder fields shall not be added to the context.
@@ -104,6 +106,7 @@ Current context-owned state includes:
 
 - diagnostic state;
 - language options;
+- immutable resource limits;
 - source file registry and source file identifiers;
 - interned identifier spellings and symbol identifiers;
 - append-only AST storage and node identifiers.
@@ -114,7 +117,7 @@ Planned context-owned state includes:
 - IR storage;
 - target options;
 - cancellation state;
-- resource accounting and limits.
+- additional resource accounting and limits.
 
 Each owned subsystem may define its own state or storage type. The context
 composes those types. Subsystems shall not depend on `Adac.Compilation` merely
@@ -331,12 +334,14 @@ inputs.
 
 ## Cancellation And Resource Limits
 
-Cancellation and resource limits are not implemented by the initial context.
-The context boundary is intended to provide their future owner.
+Each context owns an immutable resource-limit policy. The current
+implementation enforces an AST node budget before node publication and converts
+parser exhaustion into a controlled source diagnostic. The detailed contract
+is defined in `resource-limits.md`.
 
-Future limits may cover source bytes, token count, identifier count, AST nodes,
-semantic entities, IR objects, diagnostics, nesting depth, and backend temporary
-storage.
+Future limits may cover source bytes, token count, identifier count, semantic
+entities, IR objects, diagnostics, nesting depth, and backend temporary storage.
+Cancellation is not implemented yet.
 
 Cancellation shall be checked only at documented safe points. A cancelled
 compilation shall release owned resources and shall not publish partial output.
@@ -346,12 +351,13 @@ compilation shall release owned resources and shall not publish partial output.
 State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, initial stage
 result types, interned symbols, context-owned AST arena and `Node_ID`, initial
-AST source spans, and initial AST and IR validators are complete. The next
-planned sequence is:
+AST source spans, initial AST and IR validators, and the AST node budget are
+complete. The next planned sequence is:
 
 1. extend AST and IR validation with each new representation;
 2. expand in-process tests as additional context-owned state is introduced;
-3. add cancellation and resource accounting when their contracts are defined.
+3. add cancellation and additional resource accounting when their contracts
+   are defined.
 
 The sequence may change when implementation constraints require it, but each
 change shall preserve existing frontend, AST, semantic, IR, backend, failure,

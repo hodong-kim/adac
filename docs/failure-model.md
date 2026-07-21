@@ -16,6 +16,11 @@ status.
 Expected input failures are not internal contract violations and shall not be
 reported as internal compiler errors.
 
+Exceeding an explicitly configured compiler budget because of input size is an
+expected compilation failure. The input-facing stage shall report a controlled
+diagnostic and stop before publishing a partial stage result. This is distinct
+from allocator or operating-system resource exhaustion.
+
 Public and input-facing operations shall validate untrusted input before passing
 it to operations whose preconditions assume validated internal data.
 

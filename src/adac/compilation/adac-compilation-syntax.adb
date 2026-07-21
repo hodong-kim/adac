@@ -17,7 +17,11 @@ package body Adac.Compilation.Syntax is
   begin
     Adac.Compilation.validate (self);
     Adac.Compilation.Sources.validate_span (self, span);
-    return Adac.AST.append_statement (self.ast_store, kind, span);
+    return Adac.AST.append_statement
+      (self.ast_store,
+       kind,
+       span,
+       self.limits.maximum_ast_nodes);
   end create_statement;
 
   function create_compilation_unit
@@ -45,7 +49,8 @@ package body Adac.Compilation.Syntax is
        procedure_symbol,
        statements,
        end_symbol,
-       span);
+       span,
+       self.limits.maximum_ast_nodes);
   end create_compilation_unit;
 
   function node_count (self : Context) return Natural is
