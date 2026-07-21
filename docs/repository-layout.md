@@ -27,14 +27,17 @@ The repository layout aims to:
 - maintain consistent file placement during AI-assisted development;
 - start simple while preserving room for long-term growth.
 
-## Initial Directory Layout
+## Repository Structure
 
-The initial repository layout follows this structure.
+The repository uses the following major structure. The package hierarchy is
+authoritative; this listing intentionally omits individual subsystem files so
+that routine package growth does not make the document stale.
 
 ```text
 adac/
   README.md
   docs/
+    README.md
     STYLE-GUIDE.md
     ast-validation.md
     compiler-context.md
@@ -47,6 +50,8 @@ adac/
     source-spans.md
     target-support.md
   src/
+    adac.ads
+    adac_main.adb
     adac/
       driver/
       frontend/
@@ -59,12 +64,10 @@ adac/
       source/
       symbols/
       support/
-  tests/
-    minimal/
-  tests-internal/
-    adac_internal_tests.gpr
-    adac_internal_tests.adb
-    expected.txt
+    adac-style/
+  tests/          compiler process-level fixtures
+  tests-internal/ in-process compiler contract tests
+  tests-style/    style-checker process-level fixtures
 ```
 
 ## Package Hierarchy
@@ -200,11 +203,17 @@ Guiyom.Widget.List_View
 Directory names should prefer hyphen-separated names (`-`) when practical,
 because they are easier to type in shells.
 
+Command names, executable names, Rake task names, and similar repository-level
+identifiers should also prefer `kebab-case` unless a target language or
+toolchain requires another form.
+
 Example:
 
 ```text
 src/adac-style/
 src/adac-fmt/
+style-test
+native-test
 ```
 
 This rule applies to repository paths, not Ada identifiers. Ada identifiers
@@ -240,6 +249,10 @@ end main;
 The internal test project builds a separate test executable. It shall not be a
 main of the production `adac.gpr` project. Internal tests may inspect public
 compiler contracts but should not depend on private representation details.
+
+`adac`, `adac-style`, and a future `adac-fmt` remain separate tools until a
+stable shared subsystem justifies extraction. Do not couple the tools merely
+to remove small amounts of duplication.
 
 ## Change Principles
 

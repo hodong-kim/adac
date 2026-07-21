@@ -67,6 +67,11 @@ correctly support the roadmap, violates an ownership, lifetime, failure, or
 stage-boundary contract, prevents meaningful validation, or cannot meet
 large-input and long-term maintenance requirements.
 
+The required scope is determined by the architectural contract, not by a
+preference for a small diff. Perform a full subsystem or repository-structure
+refactoring when that is necessary for the correct long-term design. Do not
+preserve an unsound structure merely to reduce the immediate change size.
+
 Document the purpose and invariants before implementation when refactoring
 changes an architectural contract. When practical, divide substantial work
 into independently green changes in this order:
