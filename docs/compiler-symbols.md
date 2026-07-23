@@ -56,17 +56,26 @@ ownership markers are not persistent identity and shall not affect output.
 
 The store uses an ordered canonical-key map and an index-to-spelling vector.
 Lookup and insertion are logarithmic in the number of distinct symbols;
-resolution is constant time. Storage is bounded by distinct canonical
-spellings observed during the compilation attempt.
+resolution is constant time. Storage is bounded by the configured distinct
+symbol budget and by the source-character budget that bounds spelling lengths.
 
 ## Failure Contract
 
 Empty spellings and malformed IDs are internal compiler contract violations and
 raise `Program_Error`.
 
+The compilation context supplies an immutable maximum number of distinct
+symbols. Re-interning a canonical spelling already present in the store is
+allowed when the budget is full because it publishes no new symbol. Attempting
+to insert a new spelling at the configured limit raises
+`Adac.Resources.Limit_Exceeded` before either store structure changes. The
+parser converts that signal into one ordinary source diagnostic and rejects the
+parse without publishing a root node.
+
 Representable index exhaustion raises `Storage_Error` before an ID can wrap or
 be reused. If map insertion fails after vector insertion, the vector update is
-rolled back before the failure propagates.
+rolled back before the failure propagates. The complete budget contract is
+defined in `resource-limits.md`.
 
 ## Extension Rules
 

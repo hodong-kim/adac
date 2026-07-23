@@ -161,6 +161,26 @@ procedure adac_internal_tests is
       return False;
   end accepts_symbol_interning;
 
+  function rejects_new_symbol_at_limit
+    (context  : in out Adac.Compilation.Context;
+     spelling : String)
+  return Boolean
+  is
+  begin
+    declare
+      symbol : constant Adac.Symbols.Symbol_ID :=
+        Adac.Compilation.Symbols.intern (context, spelling);
+      pragma unreferenced (symbol);
+    begin
+      null;
+    end;
+
+    return False;
+  exception
+    when Adac.Resources.Limit_Exceeded =>
+      return True;
+  end rejects_new_symbol_at_limit;
+
   function accepts_ast_query
     (context : Adac.Compilation.Context) return Boolean
   is
@@ -395,6 +415,10 @@ begin
      Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
      "context A did not receive the default source character limit");
   require
+    (Adac.Compilation.resource_limits (context_a).maximum_symbols =
+     Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
+     "context A did not receive the default symbol limit");
+  require
     (Adac.Compilation.resource_limits (context_a).maximum_ast_nodes =
      Adac.Resources.DEFAULT_MAXIMUM_AST_NODES,
      "context A did not receive the default AST node limit");
@@ -549,6 +573,55 @@ begin
   end;
 
   declare
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits =>
+           (maximum_source_characters_per_file =>
+              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_symbols   => 1,
+            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
+    first     : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context, "Main");
+    duplicate : constant Adac.Symbols.Symbol_ID :=
+      Adac.Compilation.Symbols.intern (context, "main");
+  begin
+    require
+      (first = duplicate,
+       "full symbol budget rejected an existing canonical spelling");
+    require
+      (rejects_new_symbol_at_limit (context, "other"),
+       "full symbol budget accepted a distinct spelling");
+    require
+      (Adac.Compilation.Symbols.symbol_count (context) = 1,
+       "rejected symbol insertion changed the symbol store");
+  end;
+
+  declare
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits =>
+           (maximum_source_characters_per_file =>
+              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_symbols   => 0,
+            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
+    result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Rejected,
+       "zero symbol limit did not reject the first identifier");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 1,
+       "zero symbol limit did not record one diagnostic");
+    require
+      (Adac.Compilation.Symbols.symbol_count (context) = 0,
+       "zero symbol limit published a symbol");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = 0,
+       "zero symbol limit published an AST node");
+  end;
+
+  declare
     context_c : constant Adac.Compilation.Context := new_context;
   begin
     require
@@ -570,6 +643,7 @@ begin
       new_context
         (resource_limits =>
            (maximum_source_characters_per_file => 0,
+            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
             maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
     result : constant Adac.Frontend.Parse_Result :=
       Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
@@ -593,6 +667,7 @@ begin
       new_context
         (resource_limits =>
            (maximum_source_characters_per_file => 20,
+            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
             maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
     result : constant Adac.Frontend.Parse_Result :=
       Adac.Frontend.parse_file (context, "tests/line-comments/input.adb");
@@ -616,6 +691,7 @@ begin
       new_context
         (resource_limits =>
            (maximum_source_characters_per_file => 41,
+            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
             maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
     result : constant Adac.Frontend.Parse_Result :=
       Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
@@ -637,6 +713,7 @@ begin
         (resource_limits =>
            (maximum_source_characters_per_file =>
               Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
             maximum_ast_nodes => 0));
     result : constant Adac.Frontend.Parse_Result :=
       Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
@@ -658,6 +735,7 @@ begin
         (resource_limits =>
            (maximum_source_characters_per_file =>
               Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
             maximum_ast_nodes => 0));
     file_id : constant Adac.Source.Source_File_ID :=
       Adac.Compilation.Sources.register_file
@@ -685,6 +763,7 @@ begin
         (resource_limits =>
            (maximum_source_characters_per_file =>
               Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
             maximum_ast_nodes => 1));
     result : constant Adac.Frontend.Parse_Result :=
       Adac.Frontend.parse_file (context, "tests/minimal/input.adb");

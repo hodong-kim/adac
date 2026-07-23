@@ -12,7 +12,10 @@ package body Adac.Compilation.Symbols is
   return Adac.Symbols.Symbol_ID is
   begin
     Adac.Compilation.validate (self);
-    return Adac.Symbols.intern (self.symbol_store, spelling);
+    return Adac.Symbols.intern
+      (self.symbol_store,
+       spelling,
+       self.limits.maximum_symbols);
   end intern;
 
   function spelling

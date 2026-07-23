@@ -17,8 +17,9 @@ maximum_ast_nodes = 1_000_000
 ```
 
 Embedders and internal tests may supply a smaller or larger limit explicitly.
-Zero is valid for either limit. It prevents the scanner from consuming a source
-character or prevents publication of any AST node, respectively.
+Zero is valid for every limit. It prevents the scanner from consuming a source
+character, prevents publication of a distinct symbol, or prevents publication
+of any AST node, respectively.
 
 `Source_Character_Limit` ends at `Positive'Last - 1`. This guarantees that the
 one-based line or column immediately after every permitted character remains
@@ -51,6 +52,25 @@ symbols, or AST nodes published before exhaustion may remain in their
 context-owned append-only stores; they remain private to the rejected
 compilation and are reclaimed with its context.
 
+## Symbol Budget
+
+The symbol budget counts distinct canonical spellings published in the
+context-owned symbol store. Re-interning a spelling already represented by the
+store returns the existing `Symbol_ID` and consumes no additional budget. In
+standard Ada mode this includes spellings that differ only by case.
+
+The store validates initialization and nonempty spelling, performs canonical
+lookup, and checks representable index capacity before applying the configured
+budget. It checks the budget before appending either the spelling or map entry.
+Consequently, exhaustion cannot hide a contract violation, reject a duplicate,
+or publish a partial symbol.
+
+Exhaustion raises `Adac.Resources.Limit_Exceeded`. The parser records exactly
+one ordinary `symbol limit exceeded` diagnostic at the identifier that required
+a new symbol and returns `Parse_Rejected` without a root `Node_ID`. Symbols
+published before exhaustion remain in the context-owned append-only store and
+are reclaimed with the rejected compilation.
+
 ## AST Node Budget
 
 The AST budget counts every node appended to the context-owned AST store,
@@ -68,8 +88,8 @@ source of truth. It does not maintain a duplicate mutable counter.
 
 ## Failure Contract
 
-The lexer and `Adac.Compilation.Syntax` raise
-`Adac.Resources.Limit_Exceeded` when valid work cannot proceed because the
+The lexer, `Adac.Symbols`, and `Adac.Compilation.Syntax` raise
+`Adac.Resources.Limit_Exceeded` when valid work cannot proceed because an
 applicable configured budget is exhausted. This exception is an internal stage
 signal, not an allocator failure.
 
@@ -93,9 +113,9 @@ same-context parallel construction is supported.
 
 ## Future Limits
 
-The current policy bounds normalized source characters per file and AST node
-publication. Aggregate raw source bytes, token count, identifier count, nesting
-depth, diagnostics, semantic objects, IR objects, backend storage, and
+The current policy bounds normalized source characters per file, distinct
+symbols, and AST node publication. Aggregate raw source bytes, token count,
+nesting depth, diagnostics, semantic objects, IR objects, backend storage, and
 cancellation safe points require separate contracts and tests before they are
 added.
 
@@ -110,6 +130,11 @@ Deterministic tests shall cover:
 - exactly one ordinary diagnostic per exhausted source file;
 - no root or AST node publication when exhaustion precedes syntax;
 - normal comment, token-position, and end-of-file behavior after streaming;
+- a zero-symbol budget rejecting the first identifier;
+- a full symbol budget allowing lookup of an existing canonical spelling;
+- a full symbol budget rejecting the next distinct spelling;
+- no partial symbol publication after a rejected insertion;
+- exactly one ordinary diagnostic per symbol-budget-exhausted parse;
 - a zero-node budget rejecting the first statement without appending a node;
 - a one-node budget accepting a statement and rejecting the unit root;
 - exactly one ordinary diagnostic per exhausted parse;

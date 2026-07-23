@@ -89,6 +89,41 @@ package body Adac.Frontend.Parser is
     return Ada.Strings.Unbounded.to_string (self.current.text);
   end current_text;
 
+  function parse_identifier_symbol
+    (self    : in out Parser;
+     context : in out Adac.Compilation.Context)
+  return Adac.Symbols.Symbol_ID
+  is
+  begin
+    if self.failed then
+      return Adac.Symbols.INVALID_SYMBOL_ID;
+    end if;
+
+    if self.current.kind /= Tok_Identifier then
+      report_expected (self, context, Tok_Identifier);
+      return Adac.Symbols.INVALID_SYMBOL_ID;
+    end if;
+
+    declare
+      position : constant Adac.Source.Position := self.current.position;
+      spelling : constant String := current_text (self);
+      symbol   : Adac.Symbols.Symbol_ID;
+    begin
+      begin
+        symbol := Adac.Compilation.Symbols.intern (context, spelling);
+      exception
+        when Adac.Resources.Limit_Exceeded =>
+          self.failed := True;
+          Adac.Compilation.Diagnostics.error
+            (context, position, "symbol limit exceeded");
+          return Adac.Symbols.INVALID_SYMBOL_ID;
+      end;
+
+      advance (self, context);
+      return symbol;
+    end;
+  end parse_identifier_symbol;
+
   function starts_statement (kind : Token_Kind) return Boolean is
   begin
     case kind is
@@ -174,23 +209,13 @@ package body Adac.Frontend.Parser is
   begin
     expect (self, context, Tok_Procedure);
 
-    if not self.failed then
-      self.procedure_symbol :=
-        Adac.Compilation.Symbols.intern (context, current_text (self));
-    end if;
-
-    expect (self, context, Tok_Identifier);
+    self.procedure_symbol := parse_identifier_symbol (self, context);
     expect (self, context, Tok_Is);
     expect (self, context, Tok_Begin);
     parse_statement_sequence (self, context);
     expect (self, context, Tok_End);
 
-    if not self.failed then
-      self.end_symbol :=
-        Adac.Compilation.Symbols.intern (context, current_text (self));
-    end if;
-
-    expect (self, context, Tok_Identifier);
+    self.end_symbol := parse_identifier_symbol (self, context);
 
     if not self.failed then
       last := self.current.position;

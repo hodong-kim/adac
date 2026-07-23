@@ -22,9 +22,11 @@ package Adac.Symbols is
   return Store;
 
   --! summary: Intern one non-empty identifier spelling.
+  --! contract: A distinct spelling requires available symbol capacity.
   function intern
-    (self     : in out Store;
-     spelling : String)
+    (self            : in out Store;
+     spelling        : String;
+     maximum_symbols : Natural := Natural'Last)
   return Symbol_ID;
 
   --! summary: Return the first spelling stored for a symbol.

@@ -7,6 +7,8 @@
 with Ada.Characters.Handling;
 with Ada.Containers;
 
+with Adac.Resources;
+
 package body Adac.Symbols is
 
   use type Ada.Containers.Count_Type;
@@ -66,8 +68,9 @@ package body Adac.Symbols is
   end validate;
 
   function intern
-    (self     : in out Store;
-     spelling : String)
+    (self            : in out Store;
+     spelling        : String;
+     maximum_symbols : Natural := Natural'Last)
   return Symbol_ID is
   begin
     validate_store (self);
@@ -87,6 +90,11 @@ package body Adac.Symbols is
 
       if self.spellings.length >= Ada.Containers.Count_Type(Positive'Last) then
         raise Storage_Error with "Adac.Symbols: symbol capacity exhausted";
+      end if;
+
+      if Natural(self.spellings.length) >= maximum_symbols then
+        raise Adac.Resources.Limit_Exceeded with
+          "Adac.Symbols: symbol limit exceeded";
       end if;
 
       symbol :=
