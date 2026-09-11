@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-composite-constrained-discrete-bracket-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [for Element : Matrix_Type(Row_Index range Rows'Range, Column_Index range 1 .. Columns) in reverse Items when Ready => Value]

@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/nested-procedure-missing-end-semicolon/input.adb:19:1: expected TOK_SEMICOLON, got TOK_BEGIN begin

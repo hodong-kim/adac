@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-aspect-global-definition-unstaged/input.adb:4:51: expected expression primary, got TOK_IN in

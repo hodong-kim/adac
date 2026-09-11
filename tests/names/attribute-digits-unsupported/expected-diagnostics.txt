@@ -1,0 +1,1 @@
+adac: error: tests/names/attribute-digits-unsupported/input.adb:3:10: attribute references are not supported: Index_Type'DiGiTs

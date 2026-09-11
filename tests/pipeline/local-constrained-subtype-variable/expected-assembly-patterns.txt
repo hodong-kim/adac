@@ -1,0 +1,10 @@
+# Constrained subtypes add no runtime slots; range checks stay semantic.
++ subq $16, %rsp
++ movl $4, -4(%rbp)
++ movl $2, -8(%rbp)
++ movl $2, -8(%rbp)
++ movl $5, -8(%rbp)
++ movl -4(%rbp), %eax
++ movl %eax, -8(%rbp)
++ leave
++ ret

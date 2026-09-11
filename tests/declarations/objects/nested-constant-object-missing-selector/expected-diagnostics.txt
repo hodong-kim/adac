@@ -1,0 +1,1 @@
+adac: error: tests/declarations/objects/nested-constant-object-missing-selector/input.adb:3:26: expected TOK_IDENTIFIER, got TOK_ASSIGN :=

@@ -1,0 +1,1 @@
+adac: error: tests/statements/procedure-body-statement-recovery-eof/input.adb:3:3: declarative item is not allowed in statement sequence

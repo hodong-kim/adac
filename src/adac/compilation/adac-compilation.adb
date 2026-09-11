@@ -19,7 +19,8 @@ package body Adac.Compilation is
             source_registry  => Adac.Source.create,
             semantic_store   => Adac.Semantics.create,
             symbol_store     => Adac.Symbols.create
-              (language_options.case_sensitive_identifiers));
+              (language_options.case_sensitive_identifiers),
+            type_store       => Adac.Types.create);
   end create;
 
   function language_options

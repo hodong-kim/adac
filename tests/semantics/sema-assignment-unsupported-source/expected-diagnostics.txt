@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-assignment-unsupported-source/input.adb:5:3: assignment expression is not semantically supported

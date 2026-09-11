@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-real-number-exponent-out-of-range/input.adb:2:3: invalid real expression in local number declaration

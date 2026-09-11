@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-exact-assignment-resource-limit/input.adb:4:3: universal integer resource limit exceeded in assignment expression

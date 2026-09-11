@@ -1,0 +1,1 @@
+adac: error: tests/lexing/character-literal-multiple-characters/input.adb:3:10: invalid character literal

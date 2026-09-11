@@ -1,0 +1,1 @@
+adac: error: unable to read input file: tests/cli/missing-input/does-not-exist.adb

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/membership-choice-expression-unsupported/input.adb:3:10: operator expressions are not supported: Item in Red and then Blue | Green

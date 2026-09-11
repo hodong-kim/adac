@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/short-circuit-and-unsupported/input.adb:3:10: operator expressions are not supported: Ready AnD ThEn Valid aNd tHeN Done

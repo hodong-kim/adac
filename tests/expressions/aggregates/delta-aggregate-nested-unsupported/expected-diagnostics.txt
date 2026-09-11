@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/delta-aggregate-nested-unsupported/input.adb:3:10: delta aggregate expressions are not supported: (Base with delta Field => (A, B))

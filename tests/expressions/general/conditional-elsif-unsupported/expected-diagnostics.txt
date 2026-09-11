@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/conditional-elsif-unsupported/input.adb:11:27: conditional expression with elsif is not supported

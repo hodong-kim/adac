@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-assignment-unsupported-target/input.adb:4:3: assignment target is not semantically supported

@@ -1,0 +1,1 @@
+adac: error: tests/declarations/types/record-type-multiple-discriminants-unsupported/input.adb:3:27: multiple discriminant specifications are not supported

@@ -1,1 +1,0 @@
-tests-style/header-wrong-filename/input.adb:2: invalid file header

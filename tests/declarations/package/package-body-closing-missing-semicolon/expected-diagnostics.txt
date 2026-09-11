@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-body-closing-missing-semicolon/input.adb:7:1: expected TOK_SEMICOLON, got TOK_IDENTIFIER Extra

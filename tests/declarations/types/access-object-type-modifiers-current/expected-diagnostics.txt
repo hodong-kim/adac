@@ -1,0 +1,1 @@
+adac: error: tests/declarations/types/access-object-type-modifiers-current/input.adb:1:1: package declarations are not semantically supported

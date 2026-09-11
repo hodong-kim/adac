@@ -1,0 +1,1 @@
+adac: error: tests/statements/case-closing-missing-semicolon/input.adb:17:5: expected TOK_SEMICOLON, got TOK_END end

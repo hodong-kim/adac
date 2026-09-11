@@ -1,0 +1,2 @@
+adac: error: tests/statements/procedure-body-statement-recovery-current/input.adb:3:3: declarative item is not allowed in statement sequence
+adac: error: tests/statements/procedure-body-statement-recovery-current/input.adb:5:3: declarative item is not allowed in statement sequence

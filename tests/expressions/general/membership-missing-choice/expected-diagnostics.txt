@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/membership-missing-choice/input.adb:3:25: expected expression primary, got TOK_SEMICOLON ;

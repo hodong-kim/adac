@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-null-exclusion-bracket-operator-unsupported/input.adb:3:10: operator expressions are not supported: [for Item : not null Ref in reverse Set when Ready and Ok => Value]

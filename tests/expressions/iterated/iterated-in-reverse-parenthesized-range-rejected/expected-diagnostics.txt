@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-reverse-parenthesized-range-rejected/input.adb:3:32: expected iterator name, got TOK_DECIMAL_INTEGER_LITERAL 1

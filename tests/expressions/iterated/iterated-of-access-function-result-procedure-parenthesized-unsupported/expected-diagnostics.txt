@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-access-function-result-procedure-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Handler : access function return access procedure of Handlers => Value)

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/short-circuit-or-unsupported/input.adb:3:10: operator expressions are not supported: Ready Or eLsE Fallback oR ElSe Done

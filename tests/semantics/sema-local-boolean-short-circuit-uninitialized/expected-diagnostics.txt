@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-boolean-short-circuit-uninitialized/input.adb:6:3: Boolean short-circuit source local read before a supported definition is not supported

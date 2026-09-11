@@ -1,0 +1,1 @@
+adac: error: tests/statements/function-body-iterator-loop-header-current/input.adb:5:7: iterator loop bodies are not supported

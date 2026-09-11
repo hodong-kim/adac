@@ -1,0 +1,1 @@
+adac: error: tests/names/selected-name-malformed-operator-selector/input.adb:3:16: invalid operator symbol "Value

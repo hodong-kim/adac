@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-others-not-last/input.adb:3:26: others aggregate association must be last

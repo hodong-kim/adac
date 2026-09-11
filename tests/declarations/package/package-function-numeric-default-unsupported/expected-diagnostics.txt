@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-function-numeric-default-unsupported/input.adb:43:33: formal parameter default expressions outside current name subset are not supported

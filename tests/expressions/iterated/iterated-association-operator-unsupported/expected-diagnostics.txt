@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-association-operator-unsupported/input.adb:3:10: operator expressions are not supported: [for Index in 1 .. Limit => Value + Offset]

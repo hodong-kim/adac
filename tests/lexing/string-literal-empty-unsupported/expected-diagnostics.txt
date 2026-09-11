@@ -1,0 +1,1 @@
+adac: error: tests/lexing/string-literal-empty-unsupported/input.adb:3:10: string literal expressions are not supported: ""

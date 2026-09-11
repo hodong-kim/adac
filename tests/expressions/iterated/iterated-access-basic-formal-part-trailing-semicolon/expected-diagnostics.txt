@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-trailing-semicolon/input.adb:3:60: expected formal parameter identifier, got TOK_RIGHT_PARENTHESIS )

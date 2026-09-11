@@ -1,0 +1,1 @@
+adac: error: tests/statements/exception-handler-choice-parameter-others-missing-arrow/input.adb:6:5: expected TOK_ARROW, got TOK_NULL null

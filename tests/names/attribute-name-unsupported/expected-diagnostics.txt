@@ -1,0 +1,1 @@
+adac: error: tests/names/attribute-name-unsupported/input.adb:3:10: attribute references are not supported: Alpha.Beta'First

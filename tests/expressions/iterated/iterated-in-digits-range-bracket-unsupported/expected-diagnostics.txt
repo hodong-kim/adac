@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-digits-range-bracket-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [for Item : Decimal_Type digits Precision range Low .. High in reverse Iterators when Ready => Value]

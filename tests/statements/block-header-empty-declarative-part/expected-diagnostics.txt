@@ -1,0 +1,1 @@
+adac: error: tests/statements/block-header-empty-declarative-part/input.adb:8:7: block statement bodies are not supported

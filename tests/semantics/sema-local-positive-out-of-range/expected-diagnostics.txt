@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-positive-out-of-range/input.adb:2:3: integer literal is outside object subtype range

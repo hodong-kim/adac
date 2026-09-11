@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-integer-case-sensitive/input.adb:2:3: local object subtype is not semantically supported

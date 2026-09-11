@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-header-missing-name/input.adb:1:9: expected TOK_IDENTIFIER, got TOK_IS is

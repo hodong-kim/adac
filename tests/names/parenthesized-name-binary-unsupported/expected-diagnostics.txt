@@ -1,0 +1,1 @@
+adac: error: tests/names/parenthesized-name-binary-unsupported/input.adb:3:10: parenthesized name forms are not supported: Factory(A+1)

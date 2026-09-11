@@ -1,0 +1,1 @@
+adac: error: tests/statements/case-header-current/input.adb:17:1: nested subprograms are not supported in procedure declarative parts

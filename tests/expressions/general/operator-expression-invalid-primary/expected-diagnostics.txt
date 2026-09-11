@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/operator-expression-invalid-primary/input.adb:3:18: expected expression primary, got TOK_ASTERISK *

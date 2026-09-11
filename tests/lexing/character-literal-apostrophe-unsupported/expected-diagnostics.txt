@@ -1,0 +1,1 @@
+adac: error: tests/lexing/character-literal-apostrophe-unsupported/input.adb:3:10: character literal expressions are not supported: '''

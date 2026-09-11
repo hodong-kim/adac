@@ -1,0 +1,48 @@
+adac: parsing tests/pipeline/local-boolean-runtime-ordering/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local Left bool
+adac: ir local Right bool
+adac: ir local Target bool
+adac: ir value 1 bool false
+adac: ir value 2 bool true
+adac: ir value 3 bool local 1
+adac: ir value 4 bool local 2
+adac: ir value 5 bool < values 3 4
+adac: ir value 6 bool local 1
+adac: ir value 7 bool local 2
+adac: ir value 8 bool <= values 6 7
+adac: ir value 9 bool local 1
+adac: ir value 10 bool local 2
+adac: ir value 11 bool > values 9 10
+adac: ir value 12 bool local 1
+adac: ir value 13 bool local 2
+adac: ir value 14 bool >= values 12 13
+adac: ir value 15 bool true
+adac: ir value 16 bool local 1
+adac: ir value 17 bool local 2
+adac: ir value 18 bool < values 16 17
+adac: ir value 19 bool local 1
+adac: ir value 20 bool local 2
+adac: ir value 21 bool <= values 19 20
+adac: ir value 22 bool local 1
+adac: ir value 23 bool local 2
+adac: ir value 24 bool > values 22 23
+adac: ir value 25 bool local 1
+adac: ir value 26 bool local 2
+adac: ir value 27 bool >= values 25 26
+adac: ir store local 1 value 1
+adac: ir store local 2 value 2
+adac: ir store local 3 value 5
+adac: ir store local 3 value 8
+adac: ir store local 3 value 11
+adac: ir store local 3 value 14
+adac: ir store local 1 value 15
+adac: ir store local 3 value 18
+adac: ir store local 3 value 21
+adac: ir store local 3 value 24
+adac: ir store local 3 value 27
+adac: backend ok
+adac: diagnostics 0 error(s)

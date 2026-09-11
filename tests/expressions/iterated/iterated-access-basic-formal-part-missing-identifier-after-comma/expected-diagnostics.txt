@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-missing-identifier-after-comma/input.adb:3:49: expected formal parameter identifier, got TOK_COLON :

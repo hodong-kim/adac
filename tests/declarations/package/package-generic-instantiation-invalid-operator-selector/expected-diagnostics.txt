@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-generic-instantiation-invalid-operator-selector/input.adb:4:6: invalid operator symbol "Value"

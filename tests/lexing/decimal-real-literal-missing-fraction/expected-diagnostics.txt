@@ -1,0 +1,1 @@
+adac: error: tests/lexing/decimal-real-literal-missing-fraction/input.adb:3:10: invalid numeric literal 123.

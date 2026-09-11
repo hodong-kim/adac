@@ -1,0 +1,1 @@
+adac: error: tests/statements/second-block-missing-begin/input.adb:21:7: expected TOK_BEGIN, got TOK_CASE case

@@ -4,6 +4,7 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
+with Ada.Characters.Latin_1;
 with Ada.Text_IO;
 
 with Adac.Frontend.Tokens;
@@ -39,9 +40,12 @@ private
   type Scanner is limited record
     file               : Ada.Text_IO.File_Type;
     is_open            : Boolean := False;
-    lookahead          : Character := ASCII.NUL;
+    lookahead          : Character := Ada.Characters.Latin_1.NUL;
     has_lookahead      : Boolean := False;
     lookahead_position : Adac.Source.Position;
+    deferred_character : Character := Ada.Characters.Latin_1.NUL;
+    has_deferred       : Boolean := False;
+    deferred_position  : Adac.Source.Position;
 
     file_id            : Adac.Source.Source_File_ID :=
       Adac.Source.INVALID_SOURCE_FILE_ID;

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-null-exclusion-missing-null/input.adb:3:29: expected TOK_NULL, got TOK_IDENTIFIER Item_Ref

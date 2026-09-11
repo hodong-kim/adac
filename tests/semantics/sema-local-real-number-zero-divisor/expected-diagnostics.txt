@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-real-number-zero-divisor/input.adb:2:3: zero divisor in local number declaration

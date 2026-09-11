@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-subtype-assignment-out-of-range/input.adb:5:3: integer expression is outside target subtype range

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-missing-subtype/input.adb:3:41: expected access subtype mark, got TOK_OF of

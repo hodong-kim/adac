@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-association-missing-arrow/input.adb:3:35: expected TOK_ARROW, got TOK_IDENTIFIER Value

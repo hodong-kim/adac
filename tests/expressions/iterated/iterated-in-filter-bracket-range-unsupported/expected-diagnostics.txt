@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-filter-bracket-range-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [FoR Index iN 1 .. Limit WhEn Ready => Value]

@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-subtype-initializer-out-of-range/input.adb:3:3: integer literal is outside object subtype range

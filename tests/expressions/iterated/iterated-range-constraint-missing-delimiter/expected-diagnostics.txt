@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-range-constraint-missing-delimiter/input.adb:3:44: expected TOK_DOUBLE_DOT, got TOK_OF of

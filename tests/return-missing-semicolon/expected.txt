@@ -1,3 +1,0 @@
-adac: parsing tests/return-missing-semicolon/input.adb
-adac: error: tests/return-missing-semicolon/input.adb:4:1: expected TOK_SEMICOLON, got TOK_END end
-adac: diagnostics 1 error(s)

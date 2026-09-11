@@ -1,0 +1,1 @@
+adac: error: tests/names/selected-name-missing-selector/input.adb:3:16: expected selector name, got TOK_SEMICOLON ;

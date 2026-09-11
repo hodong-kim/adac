@@ -1,0 +1,1 @@
+adac: error: tests/context/context-empty-with-recovery-eof/input.adb:1:6: with clause requires a library unit name

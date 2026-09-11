@@ -13,7 +13,8 @@ The store provides:
 - deterministic first-interning order;
 - context ownership validation;
 - constant-size identifier values in syntax objects;
-- a single case-comparison policy for parsing and semantic analysis.
+- a single case-comparison policy for parsing and semantic analysis;
+- non-mutating lookup of an already interned canonical spelling.
 
 ## Case Policy
 
@@ -27,10 +28,10 @@ from the first interning operation for diagnostics, dumps, and backend names.
 In the optional case-sensitive mode, the exact spelling is the canonical key,
 so `Main` and `main` receive distinct IDs.
 
-The current lexer accepts ASCII letters and underscore in identifiers. The
-initial canonicalization consequently uses the compiler's character-level
-lowercase operation. Unicode and source-encoding policy must be defined before
-the identifier character set expands.
+The frontend validates the ASCII identifier spelling defined in
+`frontend-lexing.md` before interning. Initial canonicalization uses the
+compiler's character-level lowercase operation. Unicode and source-encoding
+policy must be defined before the identifier character set expands.
 
 ## Ownership And Lifetime
 
@@ -56,8 +57,19 @@ ownership markers are not persistent identity and shall not affect output.
 
 The store uses an ordered canonical-key map and an index-to-spelling vector.
 Lookup and insertion are logarithmic in the number of distinct symbols;
-resolution is constant time. Storage is bounded by the configured distinct
-symbol budget and by the source-character budget that bounds spelling lengths.
+resolution is constant time. `find` applies the same canonical case policy as
+`intern`, returns the existing `Symbol_ID` or `INVALID_SYMBOL_ID`, and never
+inserts a spelling or consumes symbol budget. Storage is bounded by the
+configured distinct symbol budget and by the source-character budget that
+bounds spelling lengths.
+
+The store also exposes the validated one-based ordinal of a `Symbol_ID` for
+context-owned compiler structures that need a fixed-size ordered lookup key. The
+ordinal is exactly the symbol's deterministic position in this store, so two
+canonical-equivalent spellings share it and a foreign symbol is rejected before
+the ordinal is returned. It is an internal context-local ordering/key, not a
+portable or persistent identity; serialization continues to require an explicit
+schema and owning store.
 
 ## Failure Contract
 
@@ -80,9 +92,9 @@ defined in `resource-limits.md`.
 ## Extension Rules
 
 `Symbol_ID` identifies an interned name, not a declaration, AST node, semantic
-entity, or type. `Node_ID` and `Entity_ID` are distinct implemented identities.
-A future `Type_ID` store shall likewise remain distinct and shall not reuse
-symbol identity as object identity.
+entity, or type. `Node_ID`, `Entity_ID`, and `Type_ID` are distinct implemented
+identities. The context-owned type store does not reuse symbol identity as type
+or object identity.
 
 Persistent formats shall serialize schema-defined symbol ordinals and owned
 spellings, never runtime ownership markers.

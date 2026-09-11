@@ -1,0 +1,1 @@
+adac: error: tests/declarations/objects/nested-number-declaration-unsupported/input.adb:3:5: number declarations are not supported

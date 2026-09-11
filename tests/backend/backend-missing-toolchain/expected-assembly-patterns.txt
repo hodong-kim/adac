@@ -1,0 +1,5 @@
+# Assembly is emitted before the external toolchain launch.
++ .global main
++ main:
++ xorl %eax, %eax
++ ret

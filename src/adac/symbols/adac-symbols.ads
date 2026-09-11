@@ -29,11 +29,23 @@ package Adac.Symbols is
      maximum_symbols : Natural := Natural'Last)
   return Symbol_ID;
 
+  --! summary: Find an existing symbol without interning the spelling.
+  function find
+    (self     : Store;
+     spelling : String)
+  return Symbol_ID;
+
   --! summary: Return the first spelling stored for a symbol.
   function spelling
     (self   : Store;
      symbol : Symbol_ID)
   return String;
+
+  --! summary: Return the validated context-local ordinal of a symbol.
+  function ordinal
+    (self   : Store;
+     symbol : Symbol_ID)
+  return Positive;
 
   --! summary: Return the number of distinct interned symbols.
   function symbol_count (self : Store) return Natural;

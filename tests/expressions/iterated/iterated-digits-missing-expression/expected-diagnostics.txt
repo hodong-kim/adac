@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-digits-missing-expression/input.adb:3:42: expected expression primary, got TOK_IN in

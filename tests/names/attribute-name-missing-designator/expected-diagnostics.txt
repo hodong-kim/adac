@@ -1,0 +1,1 @@
+adac: error: tests/names/attribute-name-missing-designator/input.adb:3:16: expected TOK_IDENTIFIER, got TOK_SEMICOLON ;

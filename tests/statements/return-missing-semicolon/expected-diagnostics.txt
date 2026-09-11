@@ -1,0 +1,1 @@
+adac: error: tests/statements/return-missing-semicolon/input.adb:4:1: expected TOK_SEMICOLON, got TOK_END end

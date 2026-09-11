@@ -1,0 +1,11 @@
+adac: parsing tests/pipeline/local-static-constant-exact/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local result i32
+adac: ir value 1 i32 3
+adac: ir store local 1 value 1
+adac: ir null
+adac: backend ok
+adac: diagnostics 0 error(s)

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-extension-unsupported/input.adb:3:10: aggregate expressions are not supported: (Ancestor with Left => Alpha, Right => Beta)

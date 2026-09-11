@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/qualified-expression-missing-close/input.adb:3:24: expected TOK_RIGHT_PARENTHESIS, got TOK_SEMICOLON ;

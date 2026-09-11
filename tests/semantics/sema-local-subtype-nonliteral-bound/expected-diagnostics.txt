@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-subtype-nonliteral-bound/input.adb:2:3: local subtype range bounds are not supported static integer expressions

@@ -1,0 +1,1 @@
+adac: error: tests/declarations/types/derived-type-constraint-unsupported/input.adb:3:33: derived type constraints are not supported

@@ -1,0 +1,1 @@
+adac: error: tests/statements/if-statement-missing-then/input.adb:4:5: expected TOK_THEN, got TOK_NULL null

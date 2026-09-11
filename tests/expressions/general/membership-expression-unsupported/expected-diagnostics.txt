@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/membership-expression-unsupported/input.adb:3:10: operator expressions are not supported: Item NoT iN 1 .. 10 | Other

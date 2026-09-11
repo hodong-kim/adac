@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-composite-multiple-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Element : Item_Type(First, Second) of Items => Value)

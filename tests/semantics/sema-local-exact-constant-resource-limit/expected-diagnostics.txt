@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-exact-constant-resource-limit/input.adb:2:3: universal integer resource limit exceeded in local object initializer

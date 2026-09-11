@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-access-function-missing-return/input.adb:4:38: expected TOK_RETURN, got TOK_RIGHT_PARENTHESIS )

@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/outer-procedure-body-closing-invalid-identifier/input.adb:34:5: invalid identifier invalid__closing

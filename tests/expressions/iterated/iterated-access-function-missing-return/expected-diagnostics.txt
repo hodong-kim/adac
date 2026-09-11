@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-function-missing-return/input.adb:3:41: expected TOK_RETURN, got TOK_OF of

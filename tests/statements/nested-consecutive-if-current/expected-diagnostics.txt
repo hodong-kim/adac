@@ -1,0 +1,1 @@
+adac: error: tests/statements/nested-consecutive-if-current/input.adb:16:7: block statement bodies are not supported

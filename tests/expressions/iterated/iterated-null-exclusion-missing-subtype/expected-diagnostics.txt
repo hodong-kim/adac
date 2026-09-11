@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-null-exclusion-missing-subtype/input.adb:3:34: expected loop parameter subtype mark, got TOK_OF of

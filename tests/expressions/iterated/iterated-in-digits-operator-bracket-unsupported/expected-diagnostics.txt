@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-digits-operator-bracket-unsupported/input.adb:3:10: operator expressions are not supported: [for Item : Decimal_Type digits Precision + Offset in Iterators => Value]

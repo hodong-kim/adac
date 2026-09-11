@@ -1,0 +1,9 @@
+.global main
+main:
+  pushq %rbp
+  movq %rsp, %rbp
+  subq $16, %rsp
+  movl $24, -4(%rbp)
+  leave
+  xorl %eax, %eax
+  ret

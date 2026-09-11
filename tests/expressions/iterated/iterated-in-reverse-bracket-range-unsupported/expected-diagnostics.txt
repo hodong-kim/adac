@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-reverse-bracket-range-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [FoR Index iN ReVeRsE 1 .. Limit => Value]

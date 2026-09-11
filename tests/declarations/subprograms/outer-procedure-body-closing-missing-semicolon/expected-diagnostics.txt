@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/outer-procedure-body-closing-missing-semicolon/input.adb:34:1: expected TOK_SEMICOLON, got TOK_EOF 

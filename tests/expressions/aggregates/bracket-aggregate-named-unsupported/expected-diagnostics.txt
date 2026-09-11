@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/bracket-aggregate-named-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [1 .. Limit => Alpha, others => <>]

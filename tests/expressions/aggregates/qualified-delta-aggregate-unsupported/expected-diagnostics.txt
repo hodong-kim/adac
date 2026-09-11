@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/qualified-delta-aggregate-unsupported/input.adb:3:10: qualified delta aggregate expressions are not supported: Types.Composite'(Original with delta Left => Value)

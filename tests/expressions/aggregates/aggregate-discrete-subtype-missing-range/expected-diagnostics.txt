@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-discrete-subtype-missing-range/input.adb:3:30: expected TOK_DOUBLE_DOT, got TOK_ARROW =>

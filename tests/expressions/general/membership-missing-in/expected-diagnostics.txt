@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/membership-missing-in/input.adb:3:19: expected TOK_IN, got TOK_IDENTIFIER Other

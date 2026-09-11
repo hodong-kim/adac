@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-empty-private-part/input.adb:1:1: package declarations are not semantically supported

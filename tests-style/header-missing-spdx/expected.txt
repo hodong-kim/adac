@@ -1,1 +1,0 @@
-tests-style/header-missing-spdx/input.adb:4: invalid file header

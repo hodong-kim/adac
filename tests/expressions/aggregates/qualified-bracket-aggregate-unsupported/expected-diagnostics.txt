@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/qualified-bracket-aggregate-unsupported/input.adb:3:10: qualified bracket aggregate expressions are not supported: Types.Vector'[Alpha, Beta]

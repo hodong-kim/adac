@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/function-body-block-extended-return-unsupported/input.adb:7:7: block statement bodies are not supported

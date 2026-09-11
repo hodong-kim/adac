@@ -1,0 +1,1 @@
+adac: error: tests/context/context-with-clause-missing-library-name/input.adb:1:23: expected TOK_IDENTIFIER, got TOK_SEMICOLON ;

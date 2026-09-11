@@ -1,0 +1,1 @@
+adac: error: tests/statements/procedure-body-call-missing-semicolon/input.adb:21:1: expected TOK_SEMICOLON, got TOK_EXCEPTION exception

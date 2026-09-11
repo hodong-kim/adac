@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/function-body-conditional-short-circuit-current/input.adb:1:1: package bodies are not semantically supported

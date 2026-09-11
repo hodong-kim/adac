@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/function-body-deep-nested-function-rejected/input.adb:4:7: nested function declarative parts are not supported

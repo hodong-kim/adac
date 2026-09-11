@@ -1,0 +1,1 @@
+adac: error: tests/names/parenthesized-name-empty/input.adb:3:18: expected parenthesized name item, got TOK_RIGHT_PARENTHESIS )

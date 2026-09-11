@@ -1,0 +1,6 @@
+# Boolean locals use the existing scalar stack slots and backend truth coding.
++ subq $16, %rsp
++ movl $1, -4(%rbp)
++ movl $0, -8(%rbp)
++ leave
++ ret

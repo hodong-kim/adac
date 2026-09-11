@@ -1,0 +1,9 @@
+adac: parsing tests/pipeline/local-integer-variable/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local value i32
+adac: ir null
+adac: backend ok
+adac: diagnostics 0 error(s)

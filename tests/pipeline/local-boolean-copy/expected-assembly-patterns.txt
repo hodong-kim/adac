@@ -1,0 +1,12 @@
+# Boolean copies load and store the existing four-byte runtime representation.
++ subq $16, %rsp
++ movl $1, -4(%rbp)
++ movl -4(%rbp), %eax
++ movl %eax, -8(%rbp)
++ movl $0, -4(%rbp)
++ movl -4(%rbp), %eax
++ movl %eax, -12(%rbp)
++ movl -8(%rbp), %eax
++ movl %eax, -12(%rbp)
++ leave
++ ret

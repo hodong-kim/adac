@@ -1,0 +1,1 @@
+adac: error: tests/statements/if-current-calls-unsupported/input.adb:3:3: if statements are not supported

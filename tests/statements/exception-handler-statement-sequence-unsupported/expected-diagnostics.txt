@@ -1,0 +1,1 @@
+adac: error: tests/statements/exception-handler-statement-sequence-unsupported/input.adb:7:5: exception handler statement sequences are not supported

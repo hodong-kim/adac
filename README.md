@@ -1,8 +1,12 @@
 # adac
 
-`adac` is an Ada compiler written in Ada. It currently compiles a minimal Ada
-2022 procedure subset through a separated frontend, AST, semantic analysis,
-custom IR, and native backend pipeline.
+`adac` is an Ada compiler written in Ada. It currently compiles a bounded scalar
+Ada 2022 procedure subset through a separated frontend, AST, semantic analysis,
+custom IR, and native backend pipeline. Current native execution covers
+procedure-local Integer/Boolean storage, exact static scalar evaluation, runtime
+Boolean expression trees, and direct-local lazy Boolean short-circuit
+assignments. The frontend parses the complete Adac bootstrap profile, but parsed
+syntax is intentionally broader than the current semantic/runtime subset.
 
 The native backend currently supports x86-64 FreeBSD and x86-64 Linux. Other
 compiler targets may be cross-built with a matching GNAT toolchain, but program
@@ -32,16 +36,20 @@ compiler is native-only, so its program target is the same platform.
 
 ## Checks
 
+The compiler build itself does not require Clair. `rake test` and `rake check`
+use the public [Clair](https://github.com/hodong-kim/clair) test support and expect
+that repository to be checked out as the sibling directory `../clair`.
+
 ```text
 $ rake test
-$ rake style
-$ rake style-test
 $ rake check
 ```
 
 Tasks that execute a built program require a target compatible with the build
-host. `rake check` runs target-model checks, compiler tests, internal contract
-tests, source-style checks, and style-checker regression tests.
+host. `rake test` builds the sibling Clair dependency, then runs compiler fixtures
+and internal contract tests through one Clair.Test runner. `rake check` adds
+repository target and project-boundary checks. Source-style conventions remain
+documented guidance rather than a build or test gate.
 
 ## Language Options
 
@@ -55,10 +63,12 @@ $ adac main.adb -o main --case-sensitive-identifiers
 ## Documentation
 
 - `docs/README.md`: documentation authority map
-- `docs/roadmap.md`: development milestones and completion criteria
+- `docs/architecture.md`: logical compiler stages and dependency direction
+- `docs/roadmaps/README.md`: development roadmap and current work checkpoint
 - `docs/target-support.md`: target terminology and support matrix
 - `docs/repository-layout.md`: package and file placement
-- `docs/STYLE-GUIDE.md`: Clair Coding Style
+- `docs/test-orchestration.md`: test discovery and result ownership
+- `docs/STYLE-GUIDE.md`: recommended source style and API documentation conventions
 
 ## License
 

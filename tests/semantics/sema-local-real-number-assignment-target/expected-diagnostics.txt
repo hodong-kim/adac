@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-real-number-assignment-target/input.adb:4:3: assignment target is a named number

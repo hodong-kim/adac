@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/function-body-positional-after-named-rejected/input.adb:4:43: positional actual follows named association

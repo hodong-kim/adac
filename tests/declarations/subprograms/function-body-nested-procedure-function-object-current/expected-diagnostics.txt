@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/function-body-nested-procedure-function-object-current/input.adb:1:1: package bodies are not semantically supported

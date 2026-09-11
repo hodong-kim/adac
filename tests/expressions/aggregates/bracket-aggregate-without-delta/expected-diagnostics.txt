@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/bracket-aggregate-without-delta/input.adb:3:25: expected TOK_DELTA, got TOK_IDENTIFIER Field

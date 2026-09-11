@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-range-constraint-bracket-operator-unsupported/input.adb:3:10: operator expressions are not supported: [for Cursor : Index_Type range Start .. Limit + 1 in reverse Iterators when Ready => Value]

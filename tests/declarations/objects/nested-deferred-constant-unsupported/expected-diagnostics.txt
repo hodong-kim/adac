@@ -1,0 +1,1 @@
+adac: error: tests/declarations/objects/nested-deferred-constant-unsupported/input.adb:3:5: deferred constant declarations are not supported

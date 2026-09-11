@@ -1,0 +1,5 @@
+# Assignment to the second local uses the second deterministic slot.
++ subq $16, %rsp
++ movl $2, -8(%rbp)
++ leave
++ ret

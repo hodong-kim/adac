@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-use-key-bracket-operator-unsupported/input.adb:3:10: operator expressions are not supported: [for Index in 1 .. Limit use Key + Offset => Value]

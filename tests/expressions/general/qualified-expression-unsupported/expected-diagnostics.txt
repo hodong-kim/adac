@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/qualified-expression-unsupported/input.adb:3:10: qualified expressions are not supported: Types.Index'Base'(Value)

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-index-range-missing-upper/input.adb:3:39: expected expression primary, got TOK_RIGHT_PARENTHESIS )

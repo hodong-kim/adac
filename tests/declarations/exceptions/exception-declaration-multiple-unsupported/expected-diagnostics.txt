@@ -1,0 +1,1 @@
+adac: error: tests/declarations/exceptions/exception-declaration-multiple-unsupported/input.adb:2:3: declarations with multiple defining identifiers are not supported

@@ -1,0 +1,7 @@
+# A direct local copy loads the source before storing the target.
++ subq $16, %rsp
++ movl $7, -4(%rbp)
++ movl -4(%rbp), %eax
++ movl %eax, -8(%rbp)
++ leave
++ ret

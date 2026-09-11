@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-null-record-unsupported/input.adb:3:10: aggregate expressions are not supported: (null record)

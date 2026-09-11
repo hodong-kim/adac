@@ -1,0 +1,1 @@
+adac: error: tests/declarations/types/record-type-variant-others-unsupported/input.adb:8:12: record variant others choices are not supported

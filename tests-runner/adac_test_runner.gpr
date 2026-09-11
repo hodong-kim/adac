@@ -1,0 +1,25 @@
+-- ============================================================================
+-- adac_test_runner.gpr
+-- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
+-- SPDX-License-Identifier: 0BSD
+-- ============================================================================
+with "../../clair/tests/clair_test_support.gpr";
+
+project Adac_Test_Runner extends "../adac_common.gpr" is
+
+  for Languages use ("Ada");
+  for Source_Dirs use (".", "../tests-support");
+  for Object_Dir use
+    "../build/obj/" & Target_Name & "/" &
+    Build_Profile_Name & "/test-runner";
+  for Exec_Dir use
+    "../build/bin/" & Target_Name & "/" & Build_Profile_Name;
+
+  for Main use ("adac_test_runner.adb");
+
+  package Builder is
+    for Executable ("adac_test_runner.adb") use "adac-test-runner";
+  end Builder;
+
+
+end Adac_Test_Runner;

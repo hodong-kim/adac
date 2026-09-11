@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/operator-expression-multiple-relations/input.adb:3:23: expected expression end, got TOK_LESS_THAN <

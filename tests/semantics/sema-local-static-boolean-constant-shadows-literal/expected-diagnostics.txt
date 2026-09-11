@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-static-boolean-constant-shadows-literal/input.adb:3:3: local Boolean constant initializer is not semantically supported

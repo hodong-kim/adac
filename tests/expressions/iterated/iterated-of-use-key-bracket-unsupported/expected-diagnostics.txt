@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-use-key-bracket-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [FoR Element oF ReVeRsE Items WhEn Ready UsE Key => Value]

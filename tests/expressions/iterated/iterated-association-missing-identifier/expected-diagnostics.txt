@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-association-missing-identifier/input.adb:3:15: expected TOK_IDENTIFIER, got TOK_IN in

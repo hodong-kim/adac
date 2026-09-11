@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-association-missing-in/input.adb:3:21: expected TOK_IN or TOK_OF, got TOK_DECIMAL_INTEGER_LITERAL 1

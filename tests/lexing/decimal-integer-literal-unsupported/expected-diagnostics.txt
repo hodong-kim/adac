@@ -1,0 +1,1 @@
+adac: error: tests/lexing/decimal-integer-literal-unsupported/input.adb:3:10: numeric literal expressions are not supported: 123_456E+2

@@ -1,0 +1,1 @@
+adac: error: tests/parser/parser-missing-end/input.adb:3:1: expected TOK_END, got TOK_EOF 

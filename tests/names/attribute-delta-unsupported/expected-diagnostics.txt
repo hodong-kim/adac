@@ -1,0 +1,1 @@
+adac: error: tests/names/attribute-delta-unsupported/input.adb:3:10: attribute references are not supported: Fixed_Type'DeLtA

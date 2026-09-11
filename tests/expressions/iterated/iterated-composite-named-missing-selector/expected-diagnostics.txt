@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-named-missing-selector/input.adb:3:42: expected selector name, got TOK_ARROW =>

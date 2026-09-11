@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-access-constant-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (FoR Element : AcCeSs CoNsTaNt Item_Ref oF Items => Value)

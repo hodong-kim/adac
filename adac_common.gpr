@@ -1,0 +1,43 @@
+-- ============================================================================
+-- adac_common.gpr
+-- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
+-- SPDX-License-Identifier: 0BSD
+-- ============================================================================
+
+abstract project Adac_Common is
+
+  Target_Name := external
+    ("ADAC_TARGET", external ("TARGET", "x86_64-unknown-freebsd"));
+
+  Build_Profile_Name := external
+    ("ADAC_BUILD_PROFILE",
+     external ("PROFILE", external ("BUILD", "release")));
+
+  type Build_Profile_Type is ("debug", "release");
+  Build_Profile : Build_Profile_Type := external
+    ("ADAC_BUILD_PROFILE",
+     external ("PROFILE", external ("BUILD", "release")));
+
+  Ada_Common_Switches :=
+    ("-gnat2022",
+     "-Wall",
+     "-Wextra",
+     "-Werror",
+     -- Enable pragma assert and related runtime assertion checks.
+     "-gnata");
+
+  package Compiler is
+    for Local_Configuration_Pragmas use "adac.adc";
+
+    case Build_Profile is
+      when "debug" =>
+        for Default_Switches ("Ada") use
+          Ada_Common_Switches & ("-O0", "-g");
+
+      when "release" =>
+        for Default_Switches ("Ada") use
+          Ada_Common_Switches & ("-O2");
+    end case;
+  end Compiler;
+
+end Adac_Common;

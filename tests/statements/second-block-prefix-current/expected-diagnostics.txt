@@ -1,0 +1,1 @@
+adac: error: tests/statements/second-block-prefix-current/input.adb:34:1: nested subprograms are not supported in procedure declarative parts

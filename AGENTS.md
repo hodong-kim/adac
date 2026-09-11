@@ -6,6 +6,16 @@ Before reviewing, modifying, or generating source code, read and understand all
 documents under `docs/`. Source-code work must not begin until the applicable
 documentation constraints have been incorporated into the implementation plan.
 
+Roadmap discovery starts at `docs/roadmaps/README.md`. Read that index and every
+roadmap it marks applicable to the selected work. `docs/roadmaps/README.md`
+owns repository-wide milestone ordering and completion criteria; additional
+roadmaps may refine a bounded area without duplicating that authority.
+
+Documentation maintenance follows `docs/README.md`. Contract documents describe
+current durable truth and are not append-only development logs. The roadmap
+keeps one current resumption checkpoint in place; exact item-specific regression
+evidence belongs in tests, and historical checkpoints belong in Git history.
+
 Re-read the roadmap and the documents relevant to the selected work before each
 development cycle. If documentation is missing, incorrect, ambiguous, or
 inconsistent with the implementation, investigate and resolve the discrepancy
@@ -15,6 +25,64 @@ Create or update documentation before implementation depends on a new or
 changed subsystem, public API, ownership, lifetime, failure, target, or package
 boundary contract. Documentation-only corrections may be completed as an
 independent development slice.
+
+## Ada Language Reference
+
+For work that reviews, designs, implements, tests, or documents Ada language
+behavior, consult the Ada 2022 Annotated Ada Reference Manual (AARM) before
+relying on memory, compiler behavior, or secondary summaries. Use the table of
+contents and index to locate the relevant clauses, then read the applicable
+normative text, annotations, and cross-references.
+
+Use these AARM entry points:
+
+- AdaIC Ada 2022 AARM table of contents:
+  https://www.adaic.org/resources/add_content/standards/22aarm/html/AA-TOC.html
+- AdaIC Ada 2022 AARM index:
+  https://www.adaic.org/resources/add_content/standards/22aarm/html/AA-0-4.html
+- Ada-Auth Ada 2022 AARM with Amendment 1 table of contents:
+  http://www.ada-auth.org/standards/22aarm_w_amd1/html/AA-TOC.html
+- Ada-Auth Ada 2022 AARM with Amendment 1 index:
+  http://www.ada-auth.org/standards/22aarm_w_amd1/html/AA-0-4.html
+
+Treat the AdaIC Ada 2022 AARM as the baseline for Ada 2022 language rules. Use
+the Amendment 1 edition when the work targets Amendment 1 or when checking
+post-Ada-2022 corrections and changes. Determine the intended language revision
+before adopting differing wording; do not silently mix rules from different
+revisions.
+
+Distinguish normative Reference Manual text embedded in the AARM from AARM
+annotations. Annotations provide rationale and implementation guidance but do
+not override normative wording. When a relevant annotation identifies an Ada
+Issue or a rule remains materially ambiguous, inspect the corresponding Ada
+Issue before choosing compiler behavior.
+
+## Ada 2022 Obsolescent Features Policy
+
+Adac targets Ada 2022 language behavior. Do not implement any feature defined
+by Ada 2022 RM/AARM Annex J, "Obsolescent Features". Treat Annex J as outside
+Adac's supported language subset, consistently with the Ada 2022
+`No_Obsolescent_Features` restriction.
+
+Before selecting a language work item, determine whether Ada 2022 Annex J
+classifies it as an Obsolescent Feature. If it does, skip it and continue with
+the earliest non-obsolescent roadmap prerequisite. Do not add an Annex J feature
+as a roadmap prerequisite merely because it remains in the grammar, appears in
+an index, has an existing lexer token, or is accepted by another compiler.
+
+Existing implemented behavior is not removed solely by this rule. Removal of
+existing Annex J support requires a separate compatibility decision and its own
+documented, tested change.
+
+## Repository Temporary Files
+
+Project-controlled temporary files and directories shall use `build/tmp/`
+instead of the system `/tmp`. Create `build/tmp/` when needed and direct
+tools that honor a temporary-directory override (for example `TMPDIR`) to
+that location. Do not depend on free space, cleanup policy, or retained
+state in the system `/tmp`. An external tool that unavoidably hardcodes the
+system temporary directory is an exception only when no supported override
+exists.
 
 ## Autonomous Development Loop
 
@@ -30,14 +98,18 @@ Continue the following loop until a documented stop condition applies:
    prerequisite.
 4. Define its contracts, success criteria, affected boundaries, and any required
    refactoring.
-5. Create or update the required documentation, then implement the code and
+5. Create or update required contract documentation, then implement the code and
    tests as one vertical slice.
 6. Run focused tests followed by `rake check`.
-7. Review the complete diff, run `git diff --check`, and verify the working-tree
+7. Update the applicable roadmap checkpoint from the validated implementation
+   state.
+8. Review the complete diff, run `git diff --check`, and verify the working-tree
    scope.
-8. Commit only the related green change.
-9. Reassess the roadmap and implementation state, then select the next work
-   item.
+9. Commit only the related green change.
+10. Reassess the roadmap and implementation state, then select the next work
+    item.
+
+Required per-slice order: 구현 → 테스트/검증 → 로드맵 갱신 → diff 검토 → 커밋 순서.
 
 Do not stop after producing a plan when implementation is authorized and no
 stop condition applies. A milestone is complete only when its contracts,
@@ -79,7 +151,7 @@ into independently green changes in this order:
 1. behavior-preserving structure and tests;
 2. new contract or API and tests;
 3. caller migration;
-4. obsolete-path removal and documentation completion.
+4. superseded-path removal and documentation completion.
 
 Every intermediate commit must build and pass its applicable tests. Do not mix
 unrelated cleanup, renaming, formatting churn, or speculative abstractions into
@@ -91,11 +163,21 @@ migration or compatibility decision.
 Update roadmap status, ordering, prerequisites, and completion criteria when
 implementation and test evidence show that they have changed. Preserve the
 long-term goals and do not expand or reduce supported scope without evidence.
+The roadmap's long-term objectives and final project direction are user-owned:
+automated work shall not remove, replace, narrow, or redefine them unless the
+user explicitly requests that roadmap-goal change.
 
-Keep contract documentation in the same commit as the implementation that
-depends on it. Update architecture and repository-layout documents when a
-refactoring changes their boundaries. After completing a milestone, verify its
-exit criteria before proceeding to the next milestone.
+Before every commit that changes development position, update the single current
+work checkpoint in the applicable roadmap with the durable current position,
+last completed work, remaining work, latest relevant validation, and next work
+item. Rewrite that checkpoint in place; do not append a per-commit progress log,
+validation ledger, or duplicate checkpoint. Exact item-specific symbol/AST
+counts, diagnostic edges, and similar regression evidence belong in tests unless
+the number itself is an architectural contract. This update is part of the
+commit, not a later follow-up. Keep contract documentation in the same commit as
+the implementation that depends on it. Update architecture and repository-layout
+documents when a refactoring changes their boundaries. After completing a
+milestone, verify its exit criteria before proceeding to the next milestone.
 
 ## Working Tree And Commits
 
@@ -144,7 +226,8 @@ duplicating, or silently replacing them.
 Before a planned stop, report the current slice, completed commits, remaining
 work, validation already run, and any command still in progress. Update the
 roadmap only for durable changes in implementation status, not as a temporary
-session log.
+session log. Replace superseded checkpoint text instead of retaining multiple
+historical resume states.
 
 ## Stop Conditions
 

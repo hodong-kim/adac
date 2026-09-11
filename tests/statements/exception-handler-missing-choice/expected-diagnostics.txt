@@ -1,0 +1,1 @@
+adac: error: tests/statements/exception-handler-missing-choice/input.adb:5:8: expected exception choice, got TOK_ARROW =>

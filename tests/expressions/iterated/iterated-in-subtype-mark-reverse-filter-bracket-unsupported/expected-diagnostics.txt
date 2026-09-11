@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-subtype-mark-reverse-filter-bracket-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [FoR Element : Item_Type iN ReVeRsE Items WhEn Ready => Value]

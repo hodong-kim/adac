@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/outer-procedure-body-closing-no-designator/input.adb:2:3: procedure declarative item is not semantically supported

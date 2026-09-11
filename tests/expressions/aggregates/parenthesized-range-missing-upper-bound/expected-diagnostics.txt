@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/parenthesized-range-missing-upper-bound/input.adb:3:20: expected parenthesized name item, got TOK_RIGHT_PARENTHESIS )

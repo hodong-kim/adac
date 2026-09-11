@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-discrete-subtype-range-attribute-unsupported/input.adb:3:10: aggregate expressions are not supported: (Index_Type RaNgE Bounds'RaNgE => Value)

@@ -1,0 +1,1 @@
+adac: error: tests/statements/function-body-procedure-call-positional-after-named/input.adb:4:40: positional procedure call actual follows named association

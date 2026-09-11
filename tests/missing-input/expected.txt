@@ -1,3 +1,0 @@
-adac: parsing tests/missing-input/does-not-exist.adb
-adac: error: unable to read input file: tests/missing-input/does-not-exist.adb
-adac: diagnostics 1 error(s)

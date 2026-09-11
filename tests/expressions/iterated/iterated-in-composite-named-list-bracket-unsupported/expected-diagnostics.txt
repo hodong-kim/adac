@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-composite-named-list-bracket-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [for Element : Item_Type(First, Disc | Other => Choice) in reverse Items when Ready => Value]

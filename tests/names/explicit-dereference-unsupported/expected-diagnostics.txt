@@ -1,0 +1,1 @@
+adac: error: tests/names/explicit-dereference-unsupported/input.adb:3:10: explicit dereferences are not supported: Access_Value.ALL.Field

@@ -6,7 +6,9 @@ subtypes, packages, exceptions, protected objects, loop names, and labels use
 `Mixed_Case`. Symbolic constants use `UPPER_CASE_WITH_UNDERSCORES`.
 
 The goal is consistency, readability, and predictable formatting across the
-codebase.
+codebase. These conventions are recommendations for contributors and automated
+development, not repository acceptance criteria. No Adac build or test command
+shall reject otherwise valid source solely for violating this style guide.
 
 -----
 
@@ -22,7 +24,9 @@ The following file-header form is recommended, but not required:
 -- ============================================================================
 ```
 
-Use the file's actual name and applicable copyright year.
+Use the file's actual name and applicable copyright year. The copyright holder
+is file-specific; no project-owner name, email address, or other fixed holder
+text is required.
 
 -----
 

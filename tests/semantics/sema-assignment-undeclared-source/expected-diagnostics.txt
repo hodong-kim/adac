@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-assignment-undeclared-source/input.adb:4:3: assignment source is not a declared local variable

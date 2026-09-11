@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-static-boolean-constant-shadows-subtype/input.adb:3:3: local object subtype is not semantically supported

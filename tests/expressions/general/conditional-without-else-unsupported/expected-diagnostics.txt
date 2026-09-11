@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/conditional-without-else-unsupported/input.adb:10:10: conditional expression without else is not supported

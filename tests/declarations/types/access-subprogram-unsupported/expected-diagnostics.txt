@@ -1,0 +1,1 @@
+adac: error: tests/declarations/types/access-subprogram-unsupported/input.adb:3:27: access-to-subprogram types are not supported

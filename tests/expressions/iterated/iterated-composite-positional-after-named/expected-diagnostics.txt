@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-positional-after-named/input.adb:3:51: positional discriminant association follows named association

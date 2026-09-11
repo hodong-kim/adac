@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-invalid-named-selector/input.adb:3:35: named discriminant association requires a selector name

@@ -1,0 +1,4 @@
+PROCEDURE Main_2 IS
+BEGIN
+  NULL;
+END main_2;

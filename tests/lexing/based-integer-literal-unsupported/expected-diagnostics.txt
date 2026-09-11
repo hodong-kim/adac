@@ -1,0 +1,1 @@
+adac: error: tests/lexing/based-integer-literal-unsupported/input.adb:3:10: numeric literal expressions are not supported: 16#ff_e#E+1

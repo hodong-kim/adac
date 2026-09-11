@@ -14,6 +14,12 @@ package Adac.Compilation.Symbols is
      spelling : String)
   return Adac.Symbols.Symbol_ID;
 
+  --! summary: Find an existing symbol without changing this context.
+  function find
+    (self     : Context;
+     spelling : String)
+  return Adac.Symbols.Symbol_ID;
+
   --! summary: Return the first spelling stored for a context-owned symbol.
   function spelling
     (self   : Context;

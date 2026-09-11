@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/conditional-dependent-expression-unsupported/input.adb:12:28: expected TOK_ELSE, got TOK_AND and

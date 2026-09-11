@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-exact-constant-final-out-of-range/input.adb:2:3: integer expression is outside object type range

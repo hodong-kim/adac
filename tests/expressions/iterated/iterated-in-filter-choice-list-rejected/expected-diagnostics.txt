@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-filter-choice-list-rejected/input.adb:3:43: expected TOK_ARROW, got TOK_WHEN when

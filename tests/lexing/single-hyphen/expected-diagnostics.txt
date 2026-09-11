@@ -1,0 +1,1 @@
+adac: error: tests/lexing/single-hyphen/input.adb:3:3: expected TOK_NULL, got TOK_MINUS -

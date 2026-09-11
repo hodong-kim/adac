@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-range-constraint-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (FoR Element : Index_Type RaNgE 1 .. Limit oF Items => Value)

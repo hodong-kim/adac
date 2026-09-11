@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-association-missing-domain/input.adb:3:24: expected expression primary, got TOK_ARROW =>

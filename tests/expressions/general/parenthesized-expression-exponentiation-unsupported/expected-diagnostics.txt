@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/parenthesized-expression-exponentiation-unsupported/input.adb:3:10: operator expressions are not supported: A ** (B ** C)

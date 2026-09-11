@@ -1,0 +1,1 @@
+adac: error: tests/lexing/based-literal-missing-delimiter/input.adb:3:10: invalid numeric literal 16#FF

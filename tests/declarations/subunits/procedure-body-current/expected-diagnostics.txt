@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subunits/procedure-body-current/input.adb:1:1: subunits are not semantically supported

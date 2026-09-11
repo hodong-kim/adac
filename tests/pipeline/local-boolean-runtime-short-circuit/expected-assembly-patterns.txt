@@ -1,0 +1,35 @@
+# `and then` branches before the right runtime load.
++ subq $16, %rsp
++ movl $0, -4(%rbp)
++ movl $1, -8(%rbp)
++ movl -4(%rbp), %eax
++ cmpl $0, %eax
++ je .Ladac_bool_short_5
++ movl -8(%rbp), %eax
++ .Ladac_bool_short_5:
++ movl %eax, -12(%rbp)
+# A True left operand evaluates the right path through the same lazy shape.
++ movl $1, -4(%rbp)
++ movl -4(%rbp), %eax
++ cmpl $0, %eax
++ je .Ladac_bool_short_9
++ movl -8(%rbp), %eax
++ .Ladac_bool_short_9:
++ movl %eax, -12(%rbp)
+# `or else` can read a prior short-circuit definition and skips on True.
++ movl -12(%rbp), %eax
++ cmpl $0, %eax
++ jne .Ladac_bool_short_12
++ movl -4(%rbp), %eax
++ .Ladac_bool_short_12:
++ movl %eax, -12(%rbp)
+# A False left operand falls through to the right load.
++ movl $0, -8(%rbp)
++ movl -8(%rbp), %eax
++ cmpl $0, %eax
++ jne .Ladac_bool_short_16
++ movl -4(%rbp), %eax
++ .Ladac_bool_short_16:
++ movl %eax, -12(%rbp)
++ leave
++ ret

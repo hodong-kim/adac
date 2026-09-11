@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/function-body-nested-procedure-function-procedure-deep-rejected/input.adb:5:9: nested procedure bodies are not supported

@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-integer-number-out-of-envelope/input.adb:2:3: universal integer resource limit exceeded in local number declaration

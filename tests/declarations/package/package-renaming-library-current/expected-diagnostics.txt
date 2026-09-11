@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-renaming-library-current/input.adb:1:1: package renamings are not semantically supported

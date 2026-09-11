@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/qualified-array-multiple-associations-unsupported/input.adb:4:7: qualified aggregate expressions are not supported: String'(1 => self.first, 2 => self.second)

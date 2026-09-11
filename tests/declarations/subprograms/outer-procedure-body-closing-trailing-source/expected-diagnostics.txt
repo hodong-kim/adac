@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/outer-procedure-body-closing-trailing-source/input.adb:35:1: expected TOK_EOF, got TOK_NULL null

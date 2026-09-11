@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-body-first-procedure-current/input.adb:9:5: nested procedure statements are not supported

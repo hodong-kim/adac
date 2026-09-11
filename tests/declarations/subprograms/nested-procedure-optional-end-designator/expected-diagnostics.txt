@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/nested-procedure-optional-end-designator/input.adb:19:1: nested subprograms are not supported in procedure declarative parts

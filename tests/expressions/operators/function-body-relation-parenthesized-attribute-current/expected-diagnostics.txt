@@ -1,0 +1,1 @@
+adac: error: tests/expressions/operators/function-body-relation-parenthesized-attribute-current/input.adb:1:1: package bodies are not semantically supported

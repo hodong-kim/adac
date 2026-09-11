@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-initializer-invalid-based/input.adb:2:3: invalid integer literal in object initializer

@@ -1,0 +1,1 @@
+adac: error: tests/statements/function-body-case-character-choice-current/input.adb:1:1: package bodies are not semantically supported

@@ -1,0 +1,1 @@
+adac: error: tests/names/simple-name-unsupported/input.adb:3:10: name expressions are not supported: Value

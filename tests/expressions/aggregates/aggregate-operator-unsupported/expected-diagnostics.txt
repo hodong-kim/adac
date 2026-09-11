@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-operator-unsupported/input.adb:3:10: operator expressions are not supported: (Alpha + Beta, Gamma)

@@ -1,0 +1,1 @@
+adac: error: tests/statements/function-body-iterator-loop-if-prefix-current/input.adb:9:7: iterator loop bodies are not supported

@@ -1,0 +1,1 @@
+adac: error: tests/context/context-with-clauses-semantic-unsupported/input.adb:1:1: context clauses are not semantically supported

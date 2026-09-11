@@ -1,0 +1,20 @@
+adac: parsing tests/pipeline/local-boolean-copy/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local Source bool
+adac: ir local Middle bool
+adac: ir local Target bool
+adac: ir value 1 bool true
+adac: ir value 2 bool local 1
+adac: ir value 3 bool false
+adac: ir value 4 bool local 1
+adac: ir value 5 bool local 2
+adac: ir store local 1 value 1
+adac: ir store local 2 value 2
+adac: ir store local 1 value 3
+adac: ir store local 3 value 4
+adac: ir store local 3 value 5
+adac: backend ok
+adac: diagnostics 0 error(s)

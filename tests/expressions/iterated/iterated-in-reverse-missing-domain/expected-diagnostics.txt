@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-reverse-missing-domain/input.adb:3:32: expected expression primary, got TOK_ARROW =>

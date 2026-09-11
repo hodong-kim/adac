@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-subtype-child-outside-parent/input.adb:3:3: local subtype range is outside parent subtype range

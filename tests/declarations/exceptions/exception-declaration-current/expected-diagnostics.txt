@@ -1,0 +1,1 @@
+adac: error: tests/declarations/exceptions/exception-declaration-current/input.adb:1:1: package declarations are not semantically supported

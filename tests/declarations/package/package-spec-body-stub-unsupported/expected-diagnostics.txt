@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-spec-body-stub-unsupported/input.adb:2:11: package bodies are not supported in package specifications

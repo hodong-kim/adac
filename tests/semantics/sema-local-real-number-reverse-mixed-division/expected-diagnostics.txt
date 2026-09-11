@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-real-number-reverse-mixed-division/input.adb:4:3: local number declaration is not a supported static numeric expression

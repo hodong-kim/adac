@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/qualified-expression-empty/input.adb:3:19: expected expression primary, got TOK_RIGHT_PARENTHESIS )

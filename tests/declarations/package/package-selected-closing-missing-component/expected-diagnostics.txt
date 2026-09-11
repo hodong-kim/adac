@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-selected-closing-missing-component/input.adb:3:12: expected TOK_IDENTIFIER, got TOK_SEMICOLON ;

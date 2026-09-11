@@ -1,0 +1,1 @@
+adac: error: tests/statements/block-declarations-current/input.adb:10:7: block statement bodies are not supported

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-access-function-result-protected-procedure-bracket-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [for Handler : not null access protected function return not null access protected procedure in reverse Handlers when Ready => Value]

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-association-after-positional/input.adb:3:18: iterated aggregate association follows positional association

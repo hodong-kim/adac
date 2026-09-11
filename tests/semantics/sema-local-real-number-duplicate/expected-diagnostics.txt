@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-real-number-duplicate/input.adb:3:3: duplicate local declaration

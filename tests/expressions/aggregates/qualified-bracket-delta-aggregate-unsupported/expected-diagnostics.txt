@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/qualified-bracket-delta-aggregate-unsupported/input.adb:3:10: qualified bracket delta aggregate expressions are not supported: Types.Vector'[Original with delta 1 => New_Value]

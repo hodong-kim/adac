@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/bracket-delta-aggregate-others/input.adb:3:31: others is not permitted in delta aggregate

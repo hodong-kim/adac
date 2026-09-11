@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-access-function-basic-formal-part-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Handler : access function (Item : Item_Type) return Result_Type of Handlers => Value)

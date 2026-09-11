@@ -1,0 +1,2 @@
+AND Or xOr = /= < <= > >= + - & * / MOD ReM ** ABS Not <> << >> :=
+-- ignored comment

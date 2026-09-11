@@ -1,0 +1,2 @@
+adac: error: tests/declarations/package/package-body-declarative-recovery-current/input.adb:2:3: statement is not allowed in package body declarative part
+adac: error: tests/declarations/package/package-body-declarative-recovery-current/input.adb:3:3: statement is not allowed in package body declarative part

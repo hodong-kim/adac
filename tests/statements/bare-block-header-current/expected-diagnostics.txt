@@ -1,0 +1,1 @@
+adac: error: tests/statements/bare-block-header-current/input.adb:9:9: block statement bodies are not supported

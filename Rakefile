@@ -6,16 +6,20 @@
 
 require "fileutils"
 require "open3"
-require "rake/file_list"
 require "rbconfig"
 require "shellwords"
+require "tmpdir"
 
 include FileUtils
 
 SRC_TOP      = __dir__
-PROJECT     = File.join(SRC_TOP, "adac.gpr")
+PROJECT       = File.join(SRC_TOP, "adac.gpr")
 INTERNAL_TEST_PROJECT =
   File.join(SRC_TOP, "tests-internal", "adac_internal_tests.gpr")
+TEST_RUNNER_PROJECT =
+  File.join(SRC_TOP, "tests-runner", "adac_test_runner.gpr")
+CLAIR_ROOT = File.expand_path("../clair", SRC_TOP)
+CLAIR_RAKEFILE = File.join(CLAIR_ROOT, "Rakefile")
 BUILD_ROOT  = "build"
 
 SUPPORTED_TARGET_OS = %w[freebsd linux darwin windows android].freeze
@@ -269,8 +273,9 @@ GPR_TARGET = env_choice(
   NATIVE_TARGET ? nil : TARGET
 )
 
-GPRBUILD = command_words(ENV["GPRBUILD"] || "gprbuild")
+GPRBUILD = command_words(ENV["GPRBUILD"] || "gprbuild -j0")
 GPRCLEAN = command_words(ENV["GPRCLEAN"] || "gprclean")
+GPRLS    = command_words(ENV["GPRLS"] || "gprls")
 
 TARGET_OBJ_DIR = File.join(BUILD_ROOT, "obj", TARGET, BUILD_PROFILE)
 TARGET_BIN_DIR = File.join(BUILD_ROOT, "bin", TARGET, BUILD_PROFILE)
@@ -281,12 +286,13 @@ BUILD_CONFIG_PATH =
 TARGET_EXE_EXT = TARGET_OS == "windows" ? ".exe" : ""
 
 ADAC_EXE       = File.join(TARGET_BIN_DIR, "adac#{TARGET_EXE_EXT}")
-ADAC_STYLE_EXE = File.join(TARGET_BIN_DIR, "adac-style#{TARGET_EXE_EXT}")
 ADAC_INTERNAL_TEST_EXE =
   File.join(TARGET_BIN_DIR, "adac-internal-tests#{TARGET_EXE_EXT}")
+ADAC_TEST_RUNNER_EXE =
+  File.join(TARGET_BIN_DIR, "adac-test-runner#{TARGET_EXE_EXT}")
 INTERNAL_TEST_OBJ_DIR = File.join(TARGET_OBJ_DIR, "internal-tests")
-INTERNAL_TEST_ACTUAL = File.join(SRC_TOP, "tests-internal", "actual.txt")
-INTERNAL_TEST_EXPECT = File.join(SRC_TOP, "tests-internal", "expected.txt")
+TEST_RUNNER_OBJ_DIR   = File.join(TARGET_OBJ_DIR, "test-runner")
+TEST_WORK_PARENT = File.join(BUILD_ROOT, "tests", TARGET, BUILD_PROFILE)
 
 # Bypasses Rake's default task resolution for undefined arguments,
 # enabling custom CLI parameter passing (e.g. `rake plat src`).
@@ -301,9 +307,65 @@ def gpr_switches(project = PROJECT)
   switches << "-XADAC_TARGET_OS=#{TARGET_OS}"
   switches << "-XADAC_BUILD_PROFILE=#{BUILD_PROFILE}"
   switches << "-XADAC_GENERATED_SOURCE_DIR=#{GENERATED_SOURCE_DIR}"
+
+  if project == TEST_RUNNER_PROJECT
+    switches << "-XCLAIR_TARGET=#{TARGET}"
+    switches << "-XCLAIR_TARGET_OS=#{TARGET_OS}"
+    switches << "-XCLAIR_BUILD_PROFILE=#{BUILD_PROFILE}"
+  end
+
   switches << "-P"
   switches << project
   switches
+end
+
+def require_project_source_exclusion!(project, source)
+  mkdir_p GENERATED_SOURCE_DIR
+  stdout, stderr, status =
+    Open3.capture3(*(GPRBUILD + gpr_switches(project) + [source]))
+  expected = %Q{"#{source}" was not found in the sources of any project}
+  output = stdout + stderr
+
+  return if !status.success? && output.include?(expected)
+
+  fail_config "#{File.basename(project)} unexpectedly includes #{source} or failed " \
+              "for a different reason:\n#{output}"
+end
+
+def bootstrap_profile_sources
+  stdout, stderr, status =
+    Open3.capture3(*(GPRLS + gpr_switches + ["--closure"]))
+  unless status.success?
+    fail_config "failed to resolve adac.gpr main closure:\n#{stdout}#{stderr}"
+  end
+
+  tracked_output, tracked_error, tracked_status =
+    Open3.capture3("git", "-C", SRC_TOP, "ls-files", "-z")
+  unless tracked_status.success?
+    fail_config "failed to enumerate tracked sources:\n#{tracked_error}"
+  end
+
+  tracked = {}
+  tracked_output.split("\0").each do |relative|
+    next unless relative.end_with?(".ads", ".adb")
+
+    tracked[File.expand_path(relative, SRC_TOP)] = relative
+  end
+
+  sources = stdout.lines.filter_map do |line|
+    absolute = line.strip
+    next unless absolute.end_with?(".ads", ".adb")
+
+    tracked[File.expand_path(absolute)]
+  end
+  sources = sources.uniq.sort
+  fail_config "adac.gpr tracked main closure is empty" if sources.empty?
+  sources
+end
+
+def write_bootstrap_profile_manifest(path)
+  sources = bootstrap_profile_sources
+  File.write(path, sources.join("\n") + "\n")
 end
 
 def ensure_native_task!(task_name)
@@ -313,21 +375,37 @@ def ensure_native_task!(task_name)
               "use `rake build TARGET=#{TARGET}` for cross compilation"
 end
 
-def build_project
+def build_compiler
   mkdir_p [TARGET_OBJ_DIR, TARGET_BIN_DIR, GENERATED_SOURCE_DIR]
   generate_build_config
   sh(*(GPRBUILD + gpr_switches))
 end
 
-def run_internal_tests
+def build_internal_tests
   mkdir_p [INTERNAL_TEST_OBJ_DIR, TARGET_BIN_DIR]
-  rm_f INTERNAL_TEST_ACTUAL
   sh(*(GPRBUILD + gpr_switches(INTERNAL_TEST_PROJECT)))
+end
 
-  retval = system(ADAC_INTERNAL_TEST_EXE, out: INTERNAL_TEST_ACTUAL)
-  abort "internal compiler tests failed" unless retval
+def build_clair_dependency
+  unless File.file?(CLAIR_RAKEFILE)
+    fail_config "missing Clair build driver: #{CLAIR_RAKEFILE}"
+  end
 
-  sh "diff", "-u", INTERNAL_TEST_EXPECT, INTERNAL_TEST_ACTUAL
+  environment = {
+    "CLAIR_TARGET" => TARGET,
+    "CLAIR_TARGET_OS" => TARGET_OS,
+    "CLAIR_BUILD_PROFILE" => BUILD_PROFILE
+  }
+  environment["CLAIR_GPR_TARGET"] = GPR_TARGET if GPR_TARGET
+
+  Dir.chdir(CLAIR_ROOT) do
+    sh environment, "rake", "build"
+  end
+end
+
+def build_test_runner
+  mkdir_p [TEST_RUNNER_OBJ_DIR, TARGET_BIN_DIR]
+  sh(*(GPRBUILD + gpr_switches(TEST_RUNNER_PROJECT)))
 end
 
 def clean_project
@@ -338,7 +416,11 @@ def clean_project
     return
   end
 
-  sh(*(GPRCLEAN + gpr_switches))
+  compiler_was_built =
+    File.exist?(ADAC_EXE) ||
+    !Dir.glob(File.join(TARGET_OBJ_DIR, "adac_main.*")).empty?
+
+  sh(*(GPRCLEAN + gpr_switches)) if compiler_was_built
 ensure
   rm_rf GENERATED_SOURCE_DIR
 end
@@ -360,6 +442,7 @@ task :info do
   puts "OBJECT_DIR=#{TARGET_OBJ_DIR}"
   puts "EXEC_DIR=#{TARGET_BIN_DIR}"
   puts "GENERATED_SOURCE_DIR=#{GENERATED_SOURCE_DIR}"
+  puts "CLAIR_ROOT=#{CLAIR_ROOT}"
 end
 
 desc "Test native backend target support rules"
@@ -385,257 +468,68 @@ end
 
 task default: :build
 
-desc "Build adac for the selected target"
-task :build do
-  build_project
+desc "Verify compiler GPR source ownership boundaries"
+task :"project-boundary-test" do
+  require_project_source_exclusion!(PROJECT, "adac_internal_tests.adb")
+  require_project_source_exclusion!(PROJECT, "adac_test_runner.adb")
 end
+
+desc "Build only the adac compiler for the selected target"
+task :"build-compiler" do
+  build_compiler
+end
+
+desc "Build adac for the selected target"
+task build: [:"build-compiler"]
 
 desc "Run the native adac executable"
 task :run do
   ensure_native_task!("run")
-  Rake::Task[:build].invoke
+  Rake::Task[:"build-compiler"].invoke
   sh ADAC_EXE
 end
 
-desc "Run compiler regression tests"
+desc "Run all test fixtures through Clair.Test"
 task :test do
   ensure_native_task!("test")
   Rake::Task[:build].invoke
+  build_internal_tests
+  build_clair_dependency
+  build_test_runner
 
-  FileList["tests/*"].each do |dir|
-    next unless File.directory?(dir)
+  mkdir_p TEST_WORK_PARENT
+  test_work_root = Dir.mktmpdir("run-", TEST_WORK_PARENT)
+  test_succeeded = false
 
-    input_file          = "#{dir}/input.adb"
-    input_path_file     = "#{dir}/input-path.txt"
-    arguments_file      = "#{dir}/arguments.txt"
-    omit_output_option  =
-      File.file?("#{dir}/omit-output-option.txt")
-    output_path         = "#{dir}/main#{TARGET_EXE_EXT}"
-    asm_path            = "#{output_path}.s"
-    output_is_directory =
-      File.file?("#{dir}/output-is-directory.txt")
-    missing_toolchain    =
-      File.file?("#{dir}/missing-toolchain.txt")
-    preserve_output      =
-      File.file?("#{dir}/preserve-output.txt")
-    assembly_expect     = "#{dir}/expected-assembly.txt"
-    actual              = "#{dir}/actual.txt"
-    expect              = "#{dir}/expected.txt"
-    status              = "#{dir}/expected-status.txt"
+  begin
+    bootstrap_profile_manifest =
+      File.join(test_work_root, "bootstrap-profile-sources.txt")
+    write_bootstrap_profile_manifest(bootstrap_profile_manifest)
 
-    next unless File.file?(input_file) || File.file?(input_path_file)
+    test_env = {
+      "ADAC_TEST_ROOT" => File.expand_path(SRC_TOP),
+      "ADAC_TEST_WORK_ROOT" => File.expand_path(test_work_root),
+      "ADAC_TEST_COMPILER_EXECUTABLE" => File.expand_path(ADAC_EXE),
+      "ADAC_TEST_INTERNAL_EXECUTABLE" =>
+        File.expand_path(ADAC_INTERNAL_TEST_EXE),
+      "ADAC_TEST_EXECUTABLE_EXTENSION" => TARGET_EXE_EXT,
+      "ADAC_BOOTSTRAP_PROFILE_FILE" =>
+        File.expand_path(bootstrap_profile_manifest)
+    }
 
-    if File.file?(input_file) && File.file?(input_path_file)
-      abort "ambiguous compiler test fixture #{dir}: both input.adb and " \
-            "input-path.txt exist"
+    sh test_env, ADAC_TEST_RUNNER_EXE
+    test_succeeded = true
+  ensure
+    if test_succeeded
+      rm_rf test_work_root
+    else
+      warn "Test artifacts retained at #{File.expand_path(test_work_root)}"
     end
-
-    input =
-      if File.file?(input_path_file)
-        File.read(input_path_file).strip
-      else
-        input_file
-      end
-
-    if input.empty?
-      abort "empty input path for compiler test fixture #{dir}"
-    end
-
-    compiler_arguments =
-      if File.file?(arguments_file)
-        Shellwords.split(File.read(arguments_file))
-      else
-        []
-      end
-
-    missing = [expect, status].reject { |path| File.file?(path) }
-
-    unless missing.empty?
-      abort "incomplete compiler test fixture #{dir}: missing " \
-            "#{missing.join(', ')}"
-    end
-
-    expected_status = File.read(status).strip
-
-    if output_is_directory && expected_status == "0"
-      abort "output directory fixture must expect failure: #{dir}"
-    end
-
-    if missing_toolchain && expected_status == "0"
-      abort "missing toolchain fixture must expect failure: #{dir}"
-    end
-
-    if preserve_output && expected_status == "0"
-      abort "preserved output fixture must expect failure: #{dir}"
-    end
-
-    work_files =
-      Dir.glob("#{asm_path}.tmp.*") +
-      Dir.glob("#{asm_path}.backup.*") +
-      Dir.glob("#{output_path}.tmp.*") +
-      Dir.glob("#{output_path}.backup.*")
-
-    unless work_files.empty?
-      abort "stale backend work files for #{dir}: " \
-            "#{work_files.join(', ')}"
-    end
-
-    rm_rf asm_path
-    rm_rf output_path
-
-    if output_is_directory
-      mkdir_p output_path
-    elsif preserve_output
-      File.write(output_path, "previous-output\n")
-    end
-
-    compiler_environment = {}
-
-    if missing_toolchain
-      compiler_environment["ADAC_CC"] =
-        "adac-native-toolchain-does-not-exist"
-    end
-
-    puts "==> #{dir}"
-
-    begin
-      compiler_command = [ADAC_EXE, input]
-
-      unless omit_output_option
-        compiler_command.concat (["-o", output_path])
-      end
-
-      compiler_command.concat (compiler_arguments)
-
-      retval =
-        system(compiler_environment,
-               *compiler_command,
-               out: actual)
-
-      actual_status =
-        if retval
-          "0"
-        else
-          "1"
-        end
-
-      if actual_status != expected_status
-        message =
-          "unexpected exit status for #{dir}: " \
-          "expected #{expected_status}, " \
-          "got #{actual_status}"
-
-        abort(message)
-      end
-
-      sh "diff", "-u", expect, actual
-
-      if File.file?(assembly_expect)
-        unless File.file?(asm_path)
-          abort("missing assembly output for #{dir}: #{asm_path}")
-        end
-
-        sh "diff", "-u", assembly_expect, asm_path
-      end
-
-      work_files =
-        Dir.glob("#{asm_path}.tmp.*") +
-        Dir.glob("#{asm_path}.backup.*") +
-        Dir.glob("#{output_path}.tmp.*") +
-        Dir.glob("#{output_path}.backup.*")
-
-      unless work_files.empty?
-        abort "backend work files remain for #{dir}: " \
-              "#{work_files.join(', ')}"
-      end
-
-      if expected_status == "0"
-        unless File.exist?(asm_path)
-          abort("missing assembly output for #{dir}: #{asm_path}")
-        end
-
-        unless File.exist?(output_path)
-          abort("missing executable output for #{dir}: #{output_path}")
-        end
-
-        sh output_path
-      elsif preserve_output
-        preserved =
-          File.file?(output_path) &&
-          File.read(output_path) == "previous-output\n"
-
-        unless preserved
-          abort "failed compiler test replaced existing output for #{dir}: " \
-                "#{output_path}"
-        end
-      elsif !output_is_directory && File.exist?(output_path)
-        abort "failed compiler test published executable for #{dir}: " \
-              "#{output_path}"
-      end
-    ensure
-      rm_rf output_path if output_is_directory
-    end
-  end
-
-  run_internal_tests
-end
-
-desc "Run the style checker over project sources"
-task :style do
-  ensure_native_task!("style")
-  Rake::Task[:build].invoke
-
-  files = FileList[
-    "src/**/*.adb",
-    "src/**/*.ads",
-    "tests-internal/**/*.adb",
-    "tests-internal/**/*.ads"
-  ]
-
-  sh ADAC_STYLE_EXE, *files
-end
-
-desc "Run style checker regression tests"
-task :"style-test" do
-  ensure_native_task!("style-test")
-  Rake::Task[:build].invoke
-
-  FileList["tests-style/*"].each do |dir|
-    next unless File.directory?(dir)
-
-    input  = "#{dir}/input.adb"
-    actual = "#{dir}/actual.txt"
-    expect = "#{dir}/expected.txt"
-    status = "#{dir}/expected-status.txt"
-
-    puts "==> #{dir}"
-
-    retval = system(ADAC_STYLE_EXE, input, out: actual)
-
-    actual_status =
-      if retval
-        "0"
-      else
-        "1"
-      end
-
-    expected_status = File.read(status).strip
-
-    if actual_status != expected_status
-      message =
-        "unexpected exit status for #{dir}: " \
-        "expected #{expected_status}, " \
-        "got #{actual_status}"
-
-      abort(message)
-    end
-
-    sh "diff", "-u", expect, actual
   end
 end
 
 desc "Run all native checks"
-task check: [:"target-config-test", :test, :style, :"style-test"]
+task check: [:"target-config-test", :"project-boundary-test", :test]
 
 desc "Remove generated files for the selected target/profile"
 task :clean do
@@ -643,20 +537,7 @@ task :clean do
 
   rm_f "main.s"
 
-  FileList["tests/**/actual.txt"].each do |path|
-    rm_f path
-  end
-
-  FileList["tests-style/**/actual.txt"].each do |path|
-    rm_f path
-  end
-
-  rm_f INTERNAL_TEST_ACTUAL
-
-  FileList["tests/**/*.s", "tests/**/main"].each do |path|
-    rm_f path
-  end
-
+  rm_rf TEST_WORK_PARENT
   rm_rf [TARGET_OBJ_DIR, TARGET_BIN_DIR]
 end
 

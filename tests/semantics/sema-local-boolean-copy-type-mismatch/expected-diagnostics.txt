@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-boolean-copy-type-mismatch/input.adb:5:3: Boolean assignment source type does not match target

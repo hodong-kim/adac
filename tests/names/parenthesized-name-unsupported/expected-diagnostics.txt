@@ -1,0 +1,1 @@
+adac: error: tests/names/parenthesized-name-unsupported/input.adb:3:10: parenthesized name forms are not supported: Factory(Outer(Inner),Index).Field

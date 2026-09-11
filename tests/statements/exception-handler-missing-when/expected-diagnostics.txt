@@ -1,0 +1,1 @@
+adac: error: tests/statements/exception-handler-missing-when/input.adb:5:3: expected TOK_WHEN, got TOK_OTHERS others

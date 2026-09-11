@@ -1,0 +1,1 @@
+adac: error: tests/lexing/identifier-consecutive-underscores/input.adb:1:11: invalid identifier main__unit

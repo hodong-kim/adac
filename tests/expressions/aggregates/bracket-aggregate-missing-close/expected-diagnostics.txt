@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/bracket-aggregate-missing-close/input.adb:3:22: expected TOK_RIGHT_BRACKET, got TOK_SEMICOLON ;

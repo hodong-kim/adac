@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/bracket-aggregate-positional-named/input.adb:3:18: named bracket aggregate association follows positional association

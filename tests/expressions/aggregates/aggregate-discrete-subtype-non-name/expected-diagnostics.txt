@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-discrete-subtype-non-name/input.adb:3:13: range constraint requires a subtype mark

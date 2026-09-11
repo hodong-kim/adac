@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-assignment-type-mismatch/input.adb:4:3: assignment expression type does not match target

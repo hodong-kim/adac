@@ -1,0 +1,1 @@
+adac: error: src/adac/ast/adac-ast.ads:7:1: context clauses are not semantically supported

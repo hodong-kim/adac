@@ -1,0 +1,1 @@
+adac: error: tests/statements/exception-handlers-unsupported/input.adb:4:1: exception handlers are not supported

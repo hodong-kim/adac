@@ -1,0 +1,7 @@
+-- ============================================================================
+-- adac.adc
+-- Copyright (c) 2026 Hodong Kim <hodong@nimfsoft.com>
+-- SPDX-License-Identifier: 0BSD
+-- ============================================================================
+
+pragma Restrictions (No_Obsolescent_Features);

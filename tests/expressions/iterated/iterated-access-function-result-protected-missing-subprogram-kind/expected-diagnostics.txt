@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-function-result-protected-missing-subprogram-kind/input.adb:4:11: expected TOK_PROCEDURE or TOK_FUNCTION, got TOK_OF of

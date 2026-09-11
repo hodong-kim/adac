@@ -1,3 +1,0 @@
-adac: parsing tests/parser-empty-statement-sequence/input.adb
-adac: error: tests/parser-empty-statement-sequence/input.adb:3:1: expected TOK_NULL, got TOK_END end
-adac: diagnostics 1 error(s)

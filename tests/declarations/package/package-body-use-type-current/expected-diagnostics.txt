@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-body-use-type-current/input.adb:1:1: package bodies are not semantically supported

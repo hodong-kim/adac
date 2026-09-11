@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-body-proper-nested-unsupported/input.adb:5:3: nested package bodies are not supported

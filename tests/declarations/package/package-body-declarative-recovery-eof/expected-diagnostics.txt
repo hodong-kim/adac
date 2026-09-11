@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-body-declarative-recovery-eof/input.adb:2:3: statement is not allowed in package body declarative part

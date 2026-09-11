@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-use-key-missing-expression/input.adb:3:36: expected expression primary, got TOK_ARROW =>

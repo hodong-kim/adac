@@ -1,0 +1,1 @@
+adac: error: tests/statements/if-procedure-call-positional-trailing-comma/input.adb:4:17: expected expression primary, got TOK_RIGHT_PARENTHESIS )

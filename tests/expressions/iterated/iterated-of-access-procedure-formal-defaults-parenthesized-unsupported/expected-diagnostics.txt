@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-access-procedure-formal-defaults-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Handler : access procedure (Left : Item_Type := Default_Value; Right : out Other_Type := Other_Default) of Handlers => Value)

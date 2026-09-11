@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-composite-constrained-discrete-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Element : Matrix_Type(Index_Type, Column_Type range 1 .. Limit) of Items => Value)

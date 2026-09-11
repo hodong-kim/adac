@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-access-object-explicit-mode/input.adb:3:53: expected formal parameter subtype mark, got TOK_ACCESS access

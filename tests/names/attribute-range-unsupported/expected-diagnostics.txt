@@ -1,0 +1,1 @@
+adac: error: tests/names/attribute-range-unsupported/input.adb:3:10: attribute references are not supported: Index_Type'RaNgE

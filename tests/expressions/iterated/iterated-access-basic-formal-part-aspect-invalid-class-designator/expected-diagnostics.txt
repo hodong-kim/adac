@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-aspect-invalid-class-designator/input.adb:4:48: expected Class, got TOK_IDENTIFIER Other

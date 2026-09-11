@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-in-mode-missing-subtype/input.adb:3:52: expected formal parameter subtype mark, got TOK_RIGHT_PARENTHESIS )

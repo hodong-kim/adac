@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-positional-after-named/input.adb:3:26: positional aggregate association follows named association

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/allocator-qualified-current/input.adb:1:1: package bodies are not semantically supported

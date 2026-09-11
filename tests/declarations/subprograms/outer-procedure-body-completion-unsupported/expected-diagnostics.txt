@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/outer-procedure-body-completion-unsupported/input.adb:2:3: procedure declarative item is not semantically supported

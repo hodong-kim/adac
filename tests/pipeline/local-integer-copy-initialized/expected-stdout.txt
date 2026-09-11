@@ -1,0 +1,13 @@
+adac: parsing tests/pipeline/local-integer-copy-initialized/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local Source i32
+adac: ir local target i32
+adac: ir value 1 i32 7
+adac: ir value 2 i32 local 1
+adac: ir store local 1 value 1
+adac: ir store local 2 value 2
+adac: backend ok
+adac: diagnostics 0 error(s)

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-constrained-discrete-non-subtype/input.adb:3:50: range constraint requires a subtype mark

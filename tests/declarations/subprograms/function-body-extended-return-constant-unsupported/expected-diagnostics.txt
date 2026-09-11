@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/function-body-extended-return-constant-unsupported/input.adb:4:21: constant extended returns are not supported

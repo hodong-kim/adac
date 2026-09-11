@@ -1,0 +1,1 @@
+adac: error: tests/lexing/string-literal-unterminated/input.adb:3:10: invalid string literal "Ada

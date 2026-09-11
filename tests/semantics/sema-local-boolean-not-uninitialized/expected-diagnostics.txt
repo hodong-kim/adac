@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-boolean-not-uninitialized/input.adb:5:3: Boolean not source local read before a supported definition is not supported

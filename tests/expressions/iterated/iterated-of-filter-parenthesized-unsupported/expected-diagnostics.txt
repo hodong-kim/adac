@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-filter-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Element of Items when Ready => Value)

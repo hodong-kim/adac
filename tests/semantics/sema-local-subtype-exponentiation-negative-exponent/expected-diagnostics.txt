@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-subtype-exponentiation-negative-exponent/input.adb:2:3: invalid integer expression in local subtype range

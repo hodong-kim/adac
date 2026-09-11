@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/delta-aggregate-operator-unsupported/input.adb:3:10: operator expressions are not supported: (Original with delta Left => A + B)

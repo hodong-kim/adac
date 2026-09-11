@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-boolean-expression-type-mismatch/input.adb:5:3: Boolean expression source type does not match target

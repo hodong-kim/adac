@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/function-body-parenthesized-deep-binary-actual-unsupported/input.adb:4:50: return expression is not represented

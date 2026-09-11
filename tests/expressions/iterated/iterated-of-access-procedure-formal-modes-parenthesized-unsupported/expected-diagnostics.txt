@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-access-procedure-formal-modes-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Handler : access procedure (Left : aLiAsEd in OuT not null Item_Type; Right : oUt Other_Type) of Handlers => Value)

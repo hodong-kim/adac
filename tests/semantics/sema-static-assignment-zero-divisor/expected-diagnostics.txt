@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-static-assignment-zero-divisor/input.adb:4:3: zero divisor in assignment expression

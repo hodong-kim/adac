@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-subtype-mod-by-zero/input.adb:2:3: zero divisor in local subtype range

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-null-exclusion-missing-null/input.adb:3:54: expected TOK_NULL, got TOK_IDENTIFIER Item_Type

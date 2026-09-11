@@ -116,6 +116,29 @@ package body Adac.Symbols is
     end;
   end intern;
 
+  function find
+    (self     : Store;
+     spelling : String)
+  return Symbol_ID is
+  begin
+    validate_store (self);
+
+    if spelling'length = 0 then
+      raise Program_Error with "Adac.Symbols: empty symbol spelling";
+    end if;
+
+    declare
+      key    : constant String := canonical_spelling (self, spelling);
+      cursor : constant Symbol_Maps.Cursor := self.symbols.find (key);
+    begin
+      if Symbol_Maps.has_element (cursor) then
+        return Symbol_Maps.element (cursor);
+      end if;
+
+      return INVALID_SYMBOL_ID;
+    end;
+  end find;
+
   function spelling
     (self   : Store;
      symbol : Symbol_ID)
@@ -125,6 +148,15 @@ package body Adac.Symbols is
     return Ada.Strings.Unbounded.to_string
       (self.spellings(Positive(symbol.index)));
   end spelling;
+
+  function ordinal
+    (self   : Store;
+     symbol : Symbol_ID)
+  return Positive is
+  begin
+    validate (self, symbol);
+    return Positive (symbol.index);
+  end ordinal;
 
   function symbol_count (self : Store) return Natural is
   begin

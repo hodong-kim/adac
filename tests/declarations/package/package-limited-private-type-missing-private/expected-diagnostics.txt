@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-limited-private-type-missing-private/input.adb:2:24: expected TOK_PRIVATE, got TOK_SEMICOLON ;

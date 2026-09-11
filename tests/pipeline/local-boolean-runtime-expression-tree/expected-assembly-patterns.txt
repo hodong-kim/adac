@@ -1,0 +1,59 @@
+# Nested eager Boolean expression trees lower iteratively through stack saves.
++ subq $16, %rsp
++ movl $1, -4(%rbp)
++ movl $0, -8(%rbp)
++ movl $1, -12(%rbp)
++ movl -4(%rbp), %eax
++ xorl $1, %eax
++ pushq %rax
++ movl -8(%rbp), %eax
++ pushq %rax
++ movl $1, %eax
++ movl %eax, %ecx
++ popq %rax
++ xorl %ecx, %eax
++ movl %eax, %ecx
++ popq %rax
++ orl %ecx, %eax
++ movl %eax, -16(%rbp)
+# The static `(not False)` subtree folds to one True constant.
++ movl $0, -4(%rbp)
++ movl -16(%rbp), %eax
++ pushq %rax
++ movl $1, %eax
++ movl %eax, %ecx
++ popq %rax
++ andl %ecx, %eax
++ pushq %rax
++ movl -8(%rbp), %eax
++ xorl $1, %eax
++ movl %eax, %ecx
++ popq %rax
++ cmpl %ecx, %eax
++ sete %al
++ movzbl %al, %eax
++ movl %eax, -16(%rbp)
+# Ordering and a folded static short-circuit subtree compose in the same tree.
++ movl $1, -8(%rbp)
++ movl -4(%rbp), %eax
++ pushq %rax
++ movl -8(%rbp), %eax
++ movl %eax, %ecx
++ popq %rax
++ cmpl %ecx, %eax
++ setb %al
++ movzbl %al, %eax
++ pushq %rax
++ movl -12(%rbp), %eax
++ xorl $1, %eax
++ movl %eax, %ecx
++ popq %rax
++ xorl %ecx, %eax
++ pushq %rax
++ movl $0, %eax
++ movl %eax, %ecx
++ popq %rax
++ orl %ecx, %eax
++ movl %eax, -16(%rbp)
++ leave
++ ret

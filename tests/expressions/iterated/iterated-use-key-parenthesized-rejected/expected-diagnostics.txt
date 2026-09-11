@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-use-key-parenthesized-rejected/input.adb:3:32: expected TOK_ARROW, got TOK_USE use

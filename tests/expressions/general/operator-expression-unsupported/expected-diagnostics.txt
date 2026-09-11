@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/operator-expression-unsupported/input.adb:3:10: operator expressions are not supported: - Alpha ** Beta + abs Gamma * 2 >= Theta and not Epsilon

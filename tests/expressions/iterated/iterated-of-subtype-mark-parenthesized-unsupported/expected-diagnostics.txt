@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-subtype-mark-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Element : Item_Type of Items => Value)

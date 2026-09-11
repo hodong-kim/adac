@@ -1,0 +1,10 @@
+adac: parsing tests/pipeline/local-integer-assignment/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local value i32
+adac: ir value 1 i32 1
+adac: ir store local 1 value 1
+adac: backend ok
+adac: diagnostics 0 error(s)

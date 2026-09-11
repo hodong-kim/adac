@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-index-then-discriminant/input.adb:3:47: discriminant association follows index constraint item

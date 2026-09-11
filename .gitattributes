@@ -1,0 +1,2 @@
+# Golden output is byte-exact test data; trailing spaces may be intentional.
+tests/**/expected-*.txt whitespace=-trailing-space

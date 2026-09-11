@@ -1,0 +1,1 @@
+adac: error: tests/names/selected-name-word-operator-selector-unsupported/input.adb:3:10: name expressions are not supported: Logic."AND"

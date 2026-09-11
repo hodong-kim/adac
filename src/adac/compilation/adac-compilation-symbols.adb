@@ -18,6 +18,15 @@ package body Adac.Compilation.Symbols is
        self.limits.maximum_symbols);
   end intern;
 
+  function find
+    (self     : Context;
+     spelling : String)
+  return Adac.Symbols.Symbol_ID is
+  begin
+    Adac.Compilation.validate (self);
+    return Adac.Symbols.find (self.symbol_store, spelling);
+  end find;
+
   function spelling
     (self   : Context;
      symbol : Adac.Symbols.Symbol_ID)

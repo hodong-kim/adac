@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-composite-named-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Element : Item_Type(Disc => Choice) of Items => Value)

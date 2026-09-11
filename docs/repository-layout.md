@@ -1,11 +1,13 @@
 # Repository Layout
 
 This document defines the repository layout and Ada package placement rules for
-`adac`.
+`adac`. Logical stage responsibilities and dependency direction are defined by
+`architecture.md`.
 
 ## Core Principles
 
-The logical structure of `adac` is defined by the Ada package hierarchy.
+The logical structure of `adac` is defined by the Ada package hierarchy and the
+dependency rules in `architecture.md`.
 
 Directories should reflect the major package hierarchy. However, not every
 child package needs to be placed in its own directory immediately.
@@ -15,6 +17,15 @@ conventions. Directory names should prefer hyphen-separated names (`-`) when
 practical.
 
 These naming conventions are recommendations, not hard requirements.
+
+Implementation-only Ada subunits that exist solely to split a large package
+body shall remain beside their parent package and use a parent-prefixed filename
+that names the separated subprogram or nested implementation package. A subunit
+does not create a new logical package authority or a second state model; use it
+when lexical access to the parent body's private implementation state is
+intentionally required. A visible child package may therefore group an API while
+a parent-private nested implementation subunit retains sole access to the
+parent-owned representation and helpers.
 
 ## Goals
 
@@ -36,21 +47,37 @@ that routine package growth does not make the document stale.
 ```text
 adac/
   README.md
+  adac.adc
+  adac_common.gpr
+  adac.gpr
   docs/
     README.md
     STYLE-GUIDE.md
+    architecture.md
     ast-model.md
+    bootstrap-profile.md
     compiler-context.md
     compiler-identifiers.md
     compiler-symbols.md
+    engineering-principles.md
     failure-model.md
+    frontend-context-clauses.md
+    frontend-declarations.md
+    frontend-subprograms.md
+    frontend-statements.md
+    frontend-exception-handlers.md
+    frontend-expressions.md
+    frontend-lexing.md
+    frontend-names.md
     ir-validation.md
     resource-limits.md
     repository-layout.md
-    roadmap.md
+    roadmaps/
+      README.md
     semantic-model.md
     source-spans.md
     target-support.md
+    test-orchestration.md
   src/
     adac.ads
     adac_main.adb
@@ -68,11 +95,42 @@ adac/
       source/
       symbols/
       support/
-    adac-style/
-  tests/          compiler process-level fixtures
+  tests-runner/   Adac-owned Clair.Test runner and fixture adapters
+  tests-support/  shared Adac-owned test-only catalogs and protocols
+  tests/          compiler process-level fixtures grouped by feature area
   tests-internal/ in-process compiler contract tests
-  tests-style/    style-checker process-level fixtures
 ```
+
+## External Sibling Repositories
+
+Repositories used by development or test orchestration are not part of the
+`adac/` tree. When a sibling repository has a repository-level path contract,
+document and resolve it relative to the Adac repository rather than embedding a
+workstation-specific absolute path.
+
+The current Clair test dependency is the sibling `clair` repository, resolved
+as `../clair` from the Adac repository root. Build and test configuration shall
+use that relative relationship as its source of truth.
+
+## Build Project Boundaries
+
+GPR project ownership follows executable responsibility rather than repository
+directory breadth. `adac_common.gpr` is an abstract policy project only: it owns
+the shared target/profile scenario values, Ada compiler switches, and the local
+configuration-pragmas path, and owns no source directory, object directory, main
+unit, or executable. `adac.adc` applies Ada 2022
+`Restrictions (No_Obsolescent_Features)` to every Adac-owned project extending
+that policy. Imported sibling projects retain their own compilation policy.
+
+`adac.gpr` is the compiler project and defines only the production compiler
+source closure rooted at `adac_main.adb`. Auxiliary Ada tools are not compiler
+bootstrap members merely because they live in the same repository.
+
+Test GPR projects extend the same abstract policy project for profile and compiler
+switch consistency while retaining their own source membership, object
+directories, mains, and external dependencies. Rake orchestrates these projects
+but plain GPRbuild remains sufficient to build each project directly. Alire is
+not required for any Adac project boundary.
 
 ## Package Hierarchy
 
@@ -83,6 +141,8 @@ Adac.Driver
 Adac.Compilation
 Adac.Frontend
 Adac.AST
+Adac.AST.Construction
+Adac.AST.Validation
 Adac.Sema
 Adac.Semantics
 Adac.IR
@@ -115,6 +175,9 @@ Adac.Sema
 
 Adac.Semantics
   Context-owned semantic entities, stable entity IDs, and validation.
+
+Adac.Types
+  Context-owned semantic types, stable type IDs, and type validation.
 
 Adac.IR
   Custom IR definitions, IR construction, and IR validation.
@@ -194,7 +257,8 @@ Do not create a new directory only because a single child package was added.
 
 ## File And Directory Naming
 
-Ada package names follow Ada rules and the Clair coding style.
+Ada package names follow Ada language rules and generally use the Clair coding
+style conventions.
 
 Ada source filenames generally follow common Ada ecosystem naming conventions.
 In practice, child package separators are represented with hyphens (`-`), while
@@ -218,10 +282,9 @@ toolchain requires another form.
 Example:
 
 ```text
-src/adac-style/
 src/adac-fmt/
-style-test
-native-test
+adac-test-runner
+target-config-test
 ```
 
 This rule applies to repository paths, not Ada identifiers. Ada identifiers
@@ -234,14 +297,28 @@ the compiler as an external program and verify user-visible behavior. Tests
 under `tests-internal/` execute compiler APIs in one process and verify internal
 ownership and isolation contracts.
 
+`tests-runner/` owns deterministic fixture discovery, project-specific expected
+results, output and publication checks, and the single Clair.Test runner.
+`tests-support/` contains test-only units shared by more than one test executable
+or project; it shall not become a production dependency. Rake builds the
+required executables and invokes the runner, but it does not interpret fixture
+results.
+
+Test source directories contain only immutable inputs and expected results.
+Generated actual output, assembly, executables, and temporary backend artifacts
+belong under the target/profile-specific `build/tests/` work root. A test run
+shall not create or update generated files beside `tests/` or `tests-internal/`
+sources.
+
 The initial minimal test uses:
 
 ```text
 tests/
-  minimal/
-    input.adb
-    expected.txt
-    expected-status.txt
+  pipeline/
+    minimal/
+      input.adb
+      expected-result.txt
+      expected-stdout.txt
 ```
 
 The purpose of this test is to compile the following program and produce an
@@ -261,9 +338,10 @@ only to inject malformed state required to verify a production validator. Such
 packages shall remain under `tests-internal/` and shall not be visible to the
 production project.
 
-`adac`, `adac-style`, and a future `adac-fmt` remain separate tools until a
-stable shared subsystem justifies extraction. Do not couple the tools merely
-to remove small amounts of duplication.
+`adac` and a future `adac-fmt` remain separate tools until a stable shared
+subsystem justifies extraction. Do not couple tools merely to remove small
+amounts of duplication. Source-style guidance itself is not an executable
+repository tool or acceptance gate.
 
 ## Change Principles
 

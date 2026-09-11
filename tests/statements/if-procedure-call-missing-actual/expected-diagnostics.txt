@@ -1,0 +1,1 @@
+adac: error: tests/statements/if-procedure-call-missing-actual/input.adb:4:27: expected expression primary, got TOK_RIGHT_PARENTHESIS )

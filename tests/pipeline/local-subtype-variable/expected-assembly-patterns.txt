@@ -1,0 +1,7 @@
+# Subtype declarations add no runtime slots; the object keeps Integer lowering.
++ pushq %rbp
++ subq $16, %rsp
++ movl $3, -4(%rbp)
++ movl $4, -4(%rbp)
++ leave
++ ret

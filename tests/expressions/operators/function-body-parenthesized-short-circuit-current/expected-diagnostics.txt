@@ -1,0 +1,1 @@
+adac: error: tests/expressions/operators/function-body-parenthesized-short-circuit-current/input.adb:1:1: package bodies are not semantically supported

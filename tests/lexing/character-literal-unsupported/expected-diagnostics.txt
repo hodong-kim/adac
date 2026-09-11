@@ -1,0 +1,1 @@
+adac: error: tests/lexing/character-literal-unsupported/input.adb:3:10: character literal expressions are not supported: 'A'

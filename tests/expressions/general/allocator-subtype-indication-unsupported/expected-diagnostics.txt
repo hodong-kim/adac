@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/allocator-subtype-indication-unsupported/input.adb:4:22: allocator subtype indications are not supported

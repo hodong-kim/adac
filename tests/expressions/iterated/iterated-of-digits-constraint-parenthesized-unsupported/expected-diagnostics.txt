@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-digits-constraint-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Item : Decimal_Type digits Precision of Items => Value)

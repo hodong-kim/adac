@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/delta-aggregate-positional/input.adb:3:39: expected TOK_ARROW, got TOK_RIGHT_PARENTHESIS )

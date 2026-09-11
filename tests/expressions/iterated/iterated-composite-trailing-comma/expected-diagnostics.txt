@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-trailing-comma/input.adb:3:41: expected expression primary, got TOK_RIGHT_PARENTHESIS )

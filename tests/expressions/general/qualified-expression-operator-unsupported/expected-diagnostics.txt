@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/qualified-expression-operator-unsupported/input.adb:3:10: operator expressions are not supported: Integer'(Left + Right)

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-basic-formal-part-aspect-missing-definition/input.adb:4:50: expected expression primary, got TOK_RIGHT_PARENTHESIS )

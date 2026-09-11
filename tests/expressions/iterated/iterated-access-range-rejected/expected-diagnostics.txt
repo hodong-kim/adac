@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-access-range-rejected/input.adb:3:41: expected TOK_IN or TOK_OF, got TOK_RANGE range

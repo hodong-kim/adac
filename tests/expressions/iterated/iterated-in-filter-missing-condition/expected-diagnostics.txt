@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-filter-missing-condition/input.adb:3:37: expected expression primary, got TOK_ARROW =>

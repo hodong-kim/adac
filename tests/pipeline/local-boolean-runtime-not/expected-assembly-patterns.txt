@@ -1,0 +1,15 @@
+# Runtime Boolean not loads the canonical 0/1 local value, flips bit zero, and stores it.
++ subq $16, %rsp
++ movl $1, -4(%rbp)
++ movl -4(%rbp), %eax
++ xorl $1, %eax
++ movl %eax, -8(%rbp)
++ movl $0, -4(%rbp)
++ movl -4(%rbp), %eax
++ xorl $1, %eax
++ movl %eax, -8(%rbp)
++ movl -8(%rbp), %eax
++ xorl $1, %eax
++ movl %eax, -8(%rbp)
++ leave
++ ret

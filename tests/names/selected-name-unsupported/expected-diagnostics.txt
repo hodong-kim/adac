@@ -1,0 +1,1 @@
+adac: error: tests/names/selected-name-unsupported/input.adb:3:10: name expressions are not supported: Alpha.Beta.Gamma

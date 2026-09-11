@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/bracket-delta-aggregate-box/input.adb:3:36: box is not permitted in delta aggregate

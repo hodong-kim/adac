@@ -16,6 +16,16 @@ status.
 Expected input failures are not internal contract violations and shall not be
 reported as internal compiler errors.
 
+Parser recovery is opt-in at explicitly documented grammar boundaries. A
+recoverable source error may be diagnosed and scanning may continue only when the
+synchronization rule guarantees token-stream progress and cannot publish the
+failed enclosing construct as a successful stage result. Recovery scanning remains
+subject to the ordinary source/resource budgets. If synchronization encounters a
+resource-limit failure, external failure, or internal contract violation, recovery
+stops immediately and the terminal failure is preserved. A compilation that used
+parser recovery remains unsuccessful even when later syntax is consumed
+successfully.
+
 Exceeding an explicitly configured compiler budget because of input size is an
 expected compilation failure. The input-facing stage shall report a controlled
 diagnostic and stop before publishing a partial stage result. This is distinct

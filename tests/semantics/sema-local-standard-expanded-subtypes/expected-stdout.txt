@@ -1,0 +1,17 @@
+adac: parsing tests/semantics/sema-local-standard-expanded-subtypes/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local natural_value i32
+adac: ir local positive_value i32
+adac: ir value 1 i32 0
+adac: ir value 2 i32 1
+adac: ir value 3 i32 3
+adac: ir value 4 i32 2
+adac: ir store local 1 value 1
+adac: ir store local 2 value 2
+adac: ir store local 1 value 3
+adac: ir store local 2 value 4
+adac: backend ok
+adac: diagnostics 0 error(s)

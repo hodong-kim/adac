@@ -4,6 +4,8 @@
 -- SPDX-License-Identifier: 0BSD
 -- ============================================================================
 
+with Ada.Characters.Latin_1;
+with Ada.Command_Line;
 with Ada.Strings.Unbounded;
 
 with Adac.AST;
@@ -15,7 +17,10 @@ with Adac.Compilation.Sources;
 with Adac.Compilation.Symbols;
 with Adac.Compilation.Syntax;
 with Adac.Compilation.Syntax.Testing;
+with Adac.Compilation.Types;
 with Adac.Frontend;
+with Adac.Frontend.Lexer;
+with Adac.Frontend.Tokens;
 with Adac.IR;
 with Adac.IR.Builder;
 with Adac.Language;
@@ -24,6 +29,10 @@ with Adac.Sema;
 with Adac.Semantics;
 with Adac.Source;
 with Adac.Symbols;
+with Adac.Types;
+
+with Adac_Assembly_Patterns;
+with Adac_Internal_Test_Catalog;
 
 procedure adac_internal_tests is
 
@@ -33,9 +42,22 @@ procedure adac_internal_tests is
   use type Adac.Symbols.Symbol_ID;
   use type Adac.AST.Node_ID;
   use type Adac.AST.Node_Kind;
+  use type Adac.AST.Numeric_Literal_Kind;
+  use type Adac.AST.Parameter_Mode_Kind;
+  use type Adac.AST.Object_Declaration_Form;
+  use type Adac.AST.Parenthesized_Name_Item_Form;
   use type Adac.Frontend.Parse_Status;
+  use type Adac.IR.Instruction_Kind;
+  use type Adac.IR.Scalar_Type_Kind;
+  use type Adac.IR.Value_ID;
+  use type Adac.IR.Value_Kind;
+  use type Adac.Frontend.Tokens.Token_Kind;
   use type Adac.Sema.Analysis_Status;
   use type Adac.Semantics.Entity_Kind;
+  use type Adac.Semantics.Procedure_Statement_Kind;
+  use type Adac.Semantics.Scope_Binding_Kind;
+  use type Adac.Types.Type_ID;
+  use type Adac.Types.Type_Kind;
 
   function new_context
     (case_sensitive_identifiers : Boolean := False;
@@ -59,6 +81,17 @@ procedure adac_internal_tests is
     end if;
   end require;
 
+  function accepts_assembly_patterns
+    (patterns : String;
+     assembly : String)
+  return Boolean is
+  begin
+    return Adac_Assembly_Patterns.matches (patterns, assembly);
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_assembly_patterns;
+
   function create_minimal_unit
     (context        : in out Adac.Compilation.Context;
      procedure_name : String;
@@ -66,19 +99,30 @@ procedure adac_internal_tests is
      unit_span      : Adac.Source.Span;
      statement_span : Adac.Source.Span)
   return Adac.AST.Node_ID is
-    statements : Adac.AST.Node_List;
+    context_items  : Adac.AST.Node_List;
+    parameters     : Adac.AST.Node_List;
+    declarations   : Adac.AST.Node_List;
+    statements     : Adac.AST.Node_List;
+    handlers       : Adac.AST.Node_List;
+    handled_sequence : Adac.AST.Node_ID;
+    procedure_node : Adac.AST.Node_ID;
   begin
     Adac.AST.append
       (statements,
        Adac.Compilation.Syntax.create_statement
          (context, Adac.AST.Null_Statement_Node, statement_span));
-
-    return Adac.Compilation.Syntax.create_compilation_unit
+    handled_sequence := Adac.Compilation.Syntax.create_handled_sequence
+      (context, statements, handlers, statement_span);
+    procedure_node := Adac.Compilation.Syntax.create_procedure_body
       (context,
        Adac.Compilation.Symbols.intern (context, procedure_name),
-       statements,
+       parameters,
+       declarations,
+       handled_sequence,
        Adac.Compilation.Symbols.intern (context, end_name),
        unit_span);
+    return Adac.Compilation.Syntax.create_compilation_unit
+      (context, context_items, procedure_node, unit_span);
   end create_minimal_unit;
 
   function create_unchecked_unit
@@ -89,7 +133,13 @@ procedure adac_internal_tests is
      statement_span   : Adac.Source.Span;
      has_statement    : Boolean := True)
   return Adac.AST.Node_ID is
-    statements : Adac.AST.Node_List;
+    context_items  : Adac.AST.Node_List;
+    parameters     : Adac.AST.Node_List;
+    declarations   : Adac.AST.Node_List;
+    statements     : Adac.AST.Node_List;
+    handlers       : Adac.AST.Node_List;
+    handled_sequence : Adac.AST.Node_ID;
+    procedure_node : Adac.AST.Node_ID;
   begin
     if has_statement then
       Adac.AST.append
@@ -97,13 +147,20 @@ procedure adac_internal_tests is
          Adac.Compilation.Syntax.Testing.create_statement_unchecked
            (context, Adac.AST.Null_Statement_Node, statement_span));
     end if;
-
+    handled_sequence :=
+      Adac.Compilation.Syntax.Testing.create_handled_sequence_unchecked
+        (context, statements, handlers, statement_span);
+    procedure_node :=
+      Adac.Compilation.Syntax.Testing.create_procedure_body_unchecked
+        (context,
+         procedure_symbol,
+         parameters,
+         declarations,
+         handled_sequence,
+         end_symbol,
+         unit_span);
     return Adac.Compilation.Syntax.Testing.create_compilation_unit_unchecked
-      (context,
-       procedure_symbol,
-       statements,
-       end_symbol,
-       unit_span);
+      (context, context_items, procedure_node, unit_span);
   end create_unchecked_unit;
 
   function accepts_language_options
@@ -207,6 +264,78 @@ procedure adac_internal_tests is
       return False;
   end accepts_semantic_query;
 
+  function accepts_type
+    (context : Adac.Compilation.Context;
+     value   : Adac.Types.Type_ID)
+  return Boolean is
+  begin
+    Adac.Compilation.Types.validate (context, value);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_type;
+
+  function rejects_numeric_literal_shape_before_limit
+    (context  : in out Adac.Compilation.Context;
+     spelling : String;
+     span     : Adac.Source.Span)
+  return Boolean
+  is
+    node : Adac.AST.Node_ID;
+    pragma unreferenced (node);
+  begin
+    node := Adac.Compilation.Syntax.create_numeric_literal
+      (context, Adac.AST.Decimal_Integer_Form, spelling, span);
+    return False;
+  exception
+    when Program_Error =>
+      return True;
+
+    when Adac.Resources.Limit_Exceeded =>
+      return False;
+  end rejects_numeric_literal_shape_before_limit;
+
+  function rejects_character_literal_shape_before_limit
+    (context  : in out Adac.Compilation.Context;
+     spelling : String;
+     span     : Adac.Source.Span)
+  return Boolean
+  is
+    node : Adac.AST.Node_ID;
+    pragma unreferenced (node);
+  begin
+    node := Adac.Compilation.Syntax.create_character_literal
+      (context, spelling, span);
+    return False;
+  exception
+    when Program_Error =>
+      return True;
+
+    when Adac.Resources.Limit_Exceeded =>
+      return False;
+  end rejects_character_literal_shape_before_limit;
+
+  function rejects_string_literal_shape_before_limit
+    (context  : in out Adac.Compilation.Context;
+     spelling : String;
+     span     : Adac.Source.Span)
+  return Boolean
+  is
+    node : Adac.AST.Node_ID;
+    pragma unreferenced (node);
+  begin
+    node := Adac.Compilation.Syntax.create_string_literal
+      (context, spelling, span);
+    return False;
+  exception
+    when Program_Error =>
+      return True;
+
+    when Adac.Resources.Limit_Exceeded =>
+      return False;
+  end rejects_string_literal_shape_before_limit;
+
   function rejects_invalid_statement_before_limit
     (context : in out Adac.Compilation.Context;
      span    : Adac.Source.Span)
@@ -232,12 +361,19 @@ procedure adac_internal_tests is
      span    : Adac.Source.Span)
   return Boolean
   is
-    statements : Adac.AST.Node_List;
-    node       : Adac.AST.Node_ID;
+    parameters   : Adac.AST.Node_List;
+    declarations : Adac.AST.Node_List;
+    node         : Adac.AST.Node_ID;
     pragma unreferenced (node);
   begin
-    node := Adac.Compilation.Syntax.create_compilation_unit
-      (context, symbol, statements, symbol, span);
+    node := Adac.Compilation.Syntax.create_procedure_body
+      (context,
+       symbol,
+       parameters,
+       declarations,
+       Adac.AST.INVALID_NODE_ID,
+       symbol,
+       span);
     return False;
   exception
     when Program_Error =>
@@ -294,6 +430,517 @@ procedure adac_internal_tests is
     when Program_Error =>
       return False;
   end accepts_span;
+
+  function accepts_character_literal
+    (context : Adac.Compilation.Context;
+     literal : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_character_literal (context, literal);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_character_literal;
+
+  function accepts_numeric_literal
+    (context : Adac.Compilation.Context;
+     literal : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_numeric_literal (context, literal);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_numeric_literal;
+
+  function accepts_exception_handler
+    (context : Adac.Compilation.Context;
+     handler : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_exception_handler (context, handler);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_exception_handler;
+
+  function accepts_handled_sequence
+    (context  : Adac.Compilation.Context;
+     sequence : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_handled_sequence (context, sequence);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_handled_sequence;
+
+  function accepts_if_statement
+    (context   : Adac.Compilation.Context;
+     statement : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_if_statement (context, statement);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_if_statement;
+
+  function accepts_assignment_statement
+    (context   : Adac.Compilation.Context;
+     statement : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_assignment_statement (context, statement);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_assignment_statement;
+
+  function accepts_case_alternative
+    (context     : Adac.Compilation.Context;
+     alternative : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_case_alternative
+      (context, alternative);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_case_alternative;
+
+  function accepts_case_statement
+    (context   : Adac.Compilation.Context;
+     statement : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_case_statement (context, statement);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_case_statement;
+
+  function accepts_block_statement
+    (context   : Adac.Compilation.Context;
+     statement : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_block_statement (context, statement);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_block_statement;
+
+  function accepts_loop_statement
+    (context   : Adac.Compilation.Context;
+     statement : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_loop_statement (context, statement);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_loop_statement;
+
+  function accepts_procedure_call
+    (context   : Adac.Compilation.Context;
+     statement : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_procedure_call (context, statement);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_procedure_call;
+
+  function accepts_expression
+    (context    : Adac.Compilation.Context;
+     expression : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_expression (context, expression);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_expression;
+
+  function rejects_exception_handler_construction
+    (context                 : in out Adac.Compilation.Context;
+     choices                 : Adac.AST.Node_List;
+     statements              : Adac.AST.Node_List;
+     span                    : Adac.Source.Span;
+     choice_parameter_symbol : Adac.Symbols.Symbol_ID :=
+       Adac.Symbols.INVALID_SYMBOL_ID;
+     choice_parameter_span   : Adac.Source.Span := Adac.Source.INVALID_SPAN)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_exception_handler
+      (context,
+       choice_parameter_symbol,
+       choice_parameter_span,
+       choices,
+       statements,
+       span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_exception_handler_construction;
+
+  function rejects_handled_sequence_construction
+    (context    : in out Adac.Compilation.Context;
+     statements : Adac.AST.Node_List;
+     handlers   : Adac.AST.Node_List;
+     span       : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_handled_sequence
+      (context, statements, handlers, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_handled_sequence_construction;
+
+  function rejects_if_statement_construction
+    (context         : in out Adac.Compilation.Context;
+     condition       : Adac.AST.Node_ID;
+     then_statements : Adac.AST.Node_List;
+     else_statements : Adac.AST.Node_List;
+     span            : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+    elsif_parts : Adac.AST.Node_List;
+  begin
+    node := Adac.Compilation.Syntax.create_if_statement
+      (context, condition, then_statements, elsif_parts, else_statements, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_if_statement_construction;
+
+  function rejects_case_alternative_construction
+    (context    : in out Adac.Compilation.Context;
+     choices    : Adac.AST.Node_List;
+     statements : Adac.AST.Node_List;
+     span       : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_case_alternative
+      (context, choices, statements, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_case_alternative_construction;
+
+  function rejects_case_statement_construction
+    (context              : in out Adac.Compilation.Context;
+     selecting_expression : Adac.AST.Node_ID;
+     alternatives         : Adac.AST.Node_List;
+     span                 : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_case_statement
+      (context, selecting_expression, alternatives, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_case_statement_construction;
+
+  function rejects_block_statement_construction
+    (context          : in out Adac.Compilation.Context;
+     declarations     : Adac.AST.Node_List;
+     handled_sequence : Adac.AST.Node_ID;
+     span             : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_block_statement
+      (context, declarations, handled_sequence, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_block_statement_construction;
+
+  function rejects_loop_statement_construction
+    (context          : in out Adac.Compilation.Context;
+     parameter_symbol : Adac.Symbols.Symbol_ID;
+     parameter_span   : Adac.Source.Span;
+     reverse_present  : Boolean;
+     iterable_name    : Adac.AST.Node_ID;
+     statements       : Adac.AST.Node_List;
+     span             : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_loop_statement
+      (context,
+       parameter_symbol,
+       parameter_span,
+       reverse_present,
+       iterable_name,
+       statements,
+       span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_loop_statement_construction;
+
+  function rejects_procedure_call_construction
+    (context       : in out Adac.Compilation.Context;
+     callable_name : Adac.AST.Node_ID;
+     actuals       : Adac.AST.Node_List;
+     span          : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_procedure_call_statement
+      (context, callable_name, actuals, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_procedure_call_construction;
+
+  function rejects_if_expression_construction
+    (context         : in out Adac.Compilation.Context;
+     condition       : Adac.AST.Node_ID;
+     then_expression : Adac.AST.Node_ID;
+     else_expression : Adac.AST.Node_ID;
+     span            : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_if_expression
+      (context, condition, then_expression, else_expression, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_if_expression_construction;
+
+  function rejects_parenthesized_expression_construction
+    (context    : in out Adac.Compilation.Context;
+     expression : Adac.AST.Node_ID;
+     span       : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_parenthesized_expression
+      (context, expression, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_parenthesized_expression_construction;
+
+  function rejects_unary_operator_construction
+    (context           : in out Adac.Compilation.Context;
+     operator_spelling : String;
+     operator_span     : Adac.Source.Span;
+     operand           : Adac.AST.Node_ID;
+     span              : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_unary_operator
+      (context, operator_spelling, operator_span, operand, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_unary_operator_construction;
+
+  function rejects_binary_adding_construction
+    (context           : in out Adac.Compilation.Context;
+     left_operand      : Adac.AST.Node_ID;
+     operator_spelling : String;
+     operator_span     : Adac.Source.Span;
+     right_operand     : Adac.AST.Node_ID;
+     span              : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_binary_adding
+      (context,
+       left_operand,
+       operator_spelling,
+       operator_span,
+       right_operand,
+       span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_binary_adding_construction;
+
+  function rejects_relation_construction
+    (context           : in out Adac.Compilation.Context;
+     left_operand      : Adac.AST.Node_ID;
+     operator_spelling : String;
+     operator_span     : Adac.Source.Span;
+     right_operand     : Adac.AST.Node_ID;
+     span              : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural := Adac.Compilation.Syntax.node_count (context);
+    node   : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_relation
+      (context,
+       left_operand,
+       operator_spelling,
+       operator_span,
+       right_operand,
+       span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_relation_construction;
+
+  function accepts_name
+    (context : Adac.Compilation.Context;
+     name    : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_name (context, name);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_name;
+
+  function accepts_parameter
+    (context   : Adac.Compilation.Context;
+     parameter : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_parameter (context, parameter);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_parameter;
+
+  function accepts_declaration
+    (context     : Adac.Compilation.Context;
+     declaration : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_declaration (context, declaration);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_declaration;
+
+  function accepts_package_declaration
+    (context     : Adac.Compilation.Context;
+     declaration : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_package_declaration
+      (context, declaration);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_package_declaration;
+
+  function accepts_package_body
+    (context      : Adac.Compilation.Context;
+     package_body : Adac.AST.Node_ID)
+  return Boolean
+  is
+  begin
+    Adac.Compilation.Syntax.validate_package_body (context, package_body);
+    return True;
+  exception
+    when Program_Error =>
+      return False;
+  end accepts_package_body;
+
+  function rejects_package_body_construction
+    (context       : in out Adac.Compilation.Context;
+     defining_name : Adac.AST.Program_Unit_Name;
+     declarations  : Adac.AST.Node_List;
+     end_name      : Adac.AST.Program_Unit_Name;
+     span          : Adac.Source.Span)
+  return Boolean
+  is
+    before : constant Natural :=
+      Adac.Compilation.Syntax.node_count (context);
+    node : Adac.AST.Node_ID;
+  begin
+    node := Adac.Compilation.Syntax.create_package_body
+      (context, defining_name, declarations, end_name, span);
+    return node = Adac.AST.INVALID_NODE_ID;
+  exception
+    when Program_Error =>
+      return Adac.Compilation.Syntax.node_count (context) = before;
+  end rejects_package_body_construction;
 
   function accepts_span
     (context : Adac.Compilation.Context;
@@ -376,817 +1023,170 @@ procedure adac_internal_tests is
       return False;
   end accepts_module;
 
+  procedure require_semantic_rejection_without_entities
+    (path  : String;
+     label : String)
+  is
+    context : Adac.Compilation.Context := new_context;
+    parse_result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file (context, path);
+  begin
+    require
+      (parse_result.status = Adac.Frontend.Parse_Succeeded,
+       label & " did not reach semantic analysis");
+
+    case parse_result.status is
+      when Adac.Frontend.Parse_Rejected =>
+        null;
+
+      when Adac.Frontend.Parse_Succeeded =>
+        declare
+          analysis : constant Adac.Sema.Analysis_Result :=
+            Adac.Sema.analyze (context, parse_result.root);
+        begin
+          require
+            (analysis.status = Adac.Sema.Analysis_Rejected,
+             label & " was not rejected by semantic analysis");
+          require
+            (Adac.Compilation.Semantics.entity_count (context) = 0,
+             label & " published semantic entities after rejection");
+        end;
+    end case;
+  end require_semantic_rejection_without_entities;
+
+  procedure require_nested_ast_limit
+    (maximum_nodes  : Natural;
+     expected_nodes : Natural;
+     label_text     : String)
+  is
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits =>
+           (maximum_source_characters_per_file =>
+              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_expression_nesting =>
+              Adac.Resources.DEFAULT_MAXIMUM_EXPRESSION_NESTING,
+            maximum_profile_nesting =>
+              Adac.Resources.DEFAULT_MAXIMUM_PROFILE_NESTING,
+            maximum_universal_integer_decimal_digits =>
+              Adac.Resources
+                .DEFAULT_MAXIMUM_UNIVERSAL_INTEGER_DECIMAL_DIGITS,
+            maximum_universal_real_component_decimal_digits =>
+              Adac.Resources
+                .DEFAULT_MAXIMUM_UNIVERSAL_REAL_COMPONENT_DECIMAL_DIGITS,
+            maximum_symbols => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
+            maximum_ast_nodes => maximum_nodes));
+    result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file
+        (context, "tests/declarations/subprograms/" &
+                  "procedure-nested-subprogram-unsupported/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Rejected,
+       label_text & " AST node limit did not reject parsing");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 1,
+       label_text & " AST node limit did not record one diagnostic");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = expected_nodes,
+       label_text & " AST node limit published a partial node");
+    require
+      (Adac.Compilation.Semantics.entity_count (context) = 0,
+       label_text & " AST node limit published a semantic entity");
+  end require_nested_ast_limit;
+
+  procedure require_outer_ast_limit
+    (maximum_nodes  : Natural;
+     expected_nodes : Natural;
+     label_text     : String)
+  is
+    context : Adac.Compilation.Context :=
+      new_context
+        (resource_limits =>
+           (maximum_source_characters_per_file =>
+              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
+            maximum_expression_nesting =>
+              Adac.Resources.DEFAULT_MAXIMUM_EXPRESSION_NESTING,
+            maximum_profile_nesting =>
+              Adac.Resources.DEFAULT_MAXIMUM_PROFILE_NESTING,
+            maximum_universal_integer_decimal_digits =>
+              Adac.Resources
+                .DEFAULT_MAXIMUM_UNIVERSAL_INTEGER_DECIMAL_DIGITS,
+            maximum_universal_real_component_decimal_digits =>
+              Adac.Resources
+                .DEFAULT_MAXIMUM_UNIVERSAL_REAL_COMPONENT_DECIMAL_DIGITS,
+            maximum_symbols => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
+            maximum_ast_nodes => maximum_nodes));
+    result : constant Adac.Frontend.Parse_Result :=
+      Adac.Frontend.parse_file
+        (context,
+         "tests/declarations/subprograms/" &
+         "outer-procedure-body-completion-unsupported/input.adb");
+  begin
+    require
+      (result.status = Adac.Frontend.Parse_Rejected,
+       label_text & " AST node limit did not reject parsing");
+    require
+      (Adac.Compilation.Diagnostics.error_count (context) = 1,
+       label_text & " AST node limit did not record one diagnostic");
+    require
+      (Adac.Compilation.Syntax.node_count (context) = expected_nodes,
+       label_text & " AST node limit published a partial node");
+    require
+      (Adac.Compilation.Semantics.entity_count (context) = 0,
+       label_text & " AST node limit published a semantic entity");
+  end require_outer_ast_limit;
+
   context_a : Adac.Compilation.Context := new_context;
   context_b : Adac.Compilation.Context := new_context;
 
+  procedure Run_Context_And_Identifiers is separate;
+  procedure Run_AST_Expressions_And_Statements is separate;
+  procedure Run_AST_Declarations_And_Packages is separate;
+  procedure Run_Frontend_Rejections is separate;
+  procedure Run_Bootstrap_Package_Ownership is separate;
+  procedure Run_Bootstrap_Resource_Boundaries is separate;
+  procedure Run_Bootstrap_Profile_Frontend is separate;
+  procedure Run_Parser_And_Resource_Contracts is separate;
+  procedure Run_Semantic_And_Pipeline is separate;
+  procedure Run_IR_Validation is separate;
+  procedure Run_Test_Infrastructure is separate;
+
 begin
-  declare
-    uninitialized : Adac.Compilation.Context;
-  begin
-    require
-      (not accepts_language_options (uninitialized),
-       "default-initialized context exposed language options");
-    require
-      (not accepts_diagnostic_write (uninitialized),
-       "default-initialized context accepted a diagnostic");
-    require
-      (not accepts_source_registration (uninitialized),
-       "default-initialized context accepted a source path");
-    require
-      (not accepts_symbol_interning (uninitialized, "main"),
-       "default-initialized context accepted a symbol");
-    require
-      (not accepts_ast_query (uninitialized),
-       "default-initialized context exposed AST storage");
-    require
-      (not accepts_semantic_query (uninitialized),
-       "default-initialized context exposed semantic storage");
-  end;
-
-  require
-    (Adac.Compilation.Diagnostics.error_count (context_a) = 0,
-     "context A did not start with zero diagnostics");
-  require
-    (Adac.Compilation.Diagnostics.error_count (context_b) = 0,
-     "context B did not start with zero diagnostics");
-  require
-    (Adac.Compilation.resource_limits
-       (context_a).maximum_source_characters_per_file =
-     Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
-     "context A did not receive the default source character limit");
-  require
-    (Adac.Compilation.resource_limits (context_a).maximum_symbols =
-     Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
-     "context A did not receive the default symbol limit");
-  require
-    (Adac.Compilation.resource_limits (context_a).maximum_ast_nodes =
-     Adac.Resources.DEFAULT_MAXIMUM_AST_NODES,
-     "context A did not receive the default AST node limit");
-
-  Adac.Compilation.Diagnostics.error (context_a, "context A first error");
-
-  require
-    (Adac.Compilation.Diagnostics.error_count (context_a) = 1,
-     "context A did not record its first diagnostic");
-  require
-    (Adac.Compilation.Diagnostics.error_count (context_b) = 0,
-     "context A diagnostic leaked into context B");
-
-  Adac.Compilation.Diagnostics.error (context_a, "context A second error");
-  Adac.Compilation.Diagnostics.error (context_b, "context B error");
-
-  require
-    (Adac.Compilation.Diagnostics.error_count (context_a) = 2,
-     "context A diagnostic count is incorrect");
-  require
-    (Adac.Compilation.Diagnostics.error_count (context_b) = 1,
-     "context B diagnostic count is incorrect");
-  require
-    (Adac.Compilation.Diagnostics.has_error (context_a),
-     "context A did not report an error state");
-  require
-    (Adac.Compilation.Diagnostics.has_error (context_b),
-     "context B did not report an error state");
-
-  require
-    (Adac.Compilation.Sources.file_count (context_a) = 0,
-     "context A did not start with an empty source registry");
-  require
-    (Adac.Compilation.Sources.file_count (context_b) = 0,
-     "context B did not start with an empty source registry");
+  if Ada.Command_Line.argument_count /= 1 then
+    raise Program_Error with
+      "adac-internal-tests requires exactly one scenario";
+  end if;
 
   declare
-    source_a : constant Adac.Source.Source_File_ID
-             := Adac.Compilation.Sources.register_file
-                  (context_a, "alpha.adb");
-    source_a_again : constant Adac.Source.Source_File_ID
-                   := Adac.Compilation.Sources.register_file
-                        (context_a, "alpha.adb");
-    source_a_second : constant Adac.Source.Source_File_ID
-                    := Adac.Compilation.Sources.register_file
-                         (context_a, "second.adb");
-    source_b : constant Adac.Source.Source_File_ID
-             := Adac.Compilation.Sources.register_file
-                  (context_b, "alpha.adb");
-    position : constant Adac.Source.Position
-             := Adac.Source.make_position (source_a, 7, 9);
-    last_position : constant Adac.Source.Position
-                  := Adac.Source.make_position (source_a, 8, 2);
-    foreign_position : constant Adac.Source.Position
-                     := Adac.Source.make_position (source_b, 8, 2);
-    span : constant Adac.Source.Span :=
-      Adac.Source.make_span (position, last_position);
+    scenario : constant Adac_Internal_Test_Catalog.Scenario :=
+      Adac_Internal_Test_Catalog.scenario_from_name
+        (Ada.Command_Line.argument (1));
   begin
-    require
-      (source_a = source_a_again,
-       "duplicate source path received a different identifier");
-    require
-      (source_a /= source_a_second,
-       "different source paths received the same identifier");
-    require
-      (Adac.Compilation.Sources.file_count (context_a) = 2,
-       "context A source file count is incorrect");
-    require
-      (Adac.Compilation.Sources.file_count (context_b) = 1,
-       "context B source file count is incorrect");
-    require
-      (source_a /= source_b,
-       "different contexts received the same source identifier");
-    require
-      (Adac.Compilation.Sources.file_path (context_a, source_a) =
-       "alpha.adb",
-       "context A source path lookup failed");
-    require
-      (Adac.Compilation.Sources.file_path (context_b, source_b) =
-       "alpha.adb",
-       "context B source path lookup failed");
-    require
-      (Adac.Compilation.Sources.position_image (context_a, position) =
-       "alpha.adb:7:9",
-       "source position image is incorrect");
-    require
-      (not accepts_file_id (context_b, source_a),
-       "context B accepted a source identifier owned by context A");
-    require
-      (not accepts_file_id
-         (context_a, Adac.Source.INVALID_SOURCE_FILE_ID),
-       "context A accepted the invalid source identifier");
-    require
-      (Adac.Source.first_position (span) = position and then
-       Adac.Source.last_position (span) = last_position,
-       "source span endpoints changed during construction");
-    require
-      (accepts_span (context_a, span),
-       "source registry rejected its own span");
-    require
-      (not accepts_span (context_b, span),
-       "source registry accepted a foreign span");
-    require
-      (not accepts_span (last_position, position),
-       "source span accepted reversed endpoints");
-    require
-      (not accepts_span (position, foreign_position),
-       "source span accepted endpoints from different files");
-  end;
-
-  declare
-    symbol_a : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context_a, "Main");
-    symbol_a_again : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context_a, "main");
-    symbol_b : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context_b, "main");
-  begin
-    require
-      (symbol_a = symbol_a_again,
-       "case-insensitive context assigned different symbol IDs");
-    require
-      (symbol_a /= symbol_b,
-       "different contexts assigned the same owned symbol ID");
-    require
-      (Adac.Compilation.Symbols.spelling (context_a, symbol_a) = "Main",
-       "symbol store did not preserve the first spelling");
-    require
-      (Adac.Compilation.Symbols.symbol_count (context_a) = 1,
-       "case-insensitive symbol store retained a duplicate");
-    require
-      (not accepts_symbol (context_b, symbol_a),
-       "symbol store accepted a foreign symbol identifier");
-    require
-      (not accepts_symbol_interning (context_a, ""),
-       "symbol store accepted an empty spelling");
-  end;
-
-  declare
-    context : Adac.Compilation.Context := new_context (True);
-    upper   : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context, "Main");
-    lower   : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context, "main");
-  begin
-    require
-      (upper /= lower,
-       "case-sensitive context merged distinct symbol spellings");
-    require
-      (Adac.Compilation.Symbols.symbol_count (context) = 2,
-       "case-sensitive symbol count is incorrect");
-  end;
-
-  declare
-    context : Adac.Compilation.Context :=
-      new_context
-        (resource_limits =>
-           (maximum_source_characters_per_file =>
-              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
-            maximum_symbols   => 1,
-            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
-    first     : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context, "Main");
-    duplicate : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context, "main");
-  begin
-    require
-      (first = duplicate,
-       "full symbol budget rejected an existing canonical spelling");
-    require
-      (rejects_new_symbol_at_limit (context, "other"),
-       "full symbol budget accepted a distinct spelling");
-    require
-      (Adac.Compilation.Symbols.symbol_count (context) = 1,
-       "rejected symbol insertion changed the symbol store");
-  end;
-
-  declare
-    context : Adac.Compilation.Context :=
-      new_context
-        (resource_limits =>
-           (maximum_source_characters_per_file =>
-              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
-            maximum_symbols   => 0,
-            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
-    result : constant Adac.Frontend.Parse_Result :=
-      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
-  begin
-    require
-      (result.status = Adac.Frontend.Parse_Rejected,
-       "zero symbol limit did not reject the first identifier");
-    require
-      (Adac.Compilation.Diagnostics.error_count (context) = 1,
-       "zero symbol limit did not record one diagnostic");
-    require
-      (Adac.Compilation.Symbols.symbol_count (context) = 0,
-       "zero symbol limit published a symbol");
-    require
-      (Adac.Compilation.Syntax.node_count (context) = 0,
-       "zero symbol limit published an AST node");
-  end;
-
-  declare
-    context_c : constant Adac.Compilation.Context := new_context;
-  begin
-    require
-      (Adac.Compilation.Diagnostics.error_count (context_c) = 0,
-       "new context inherited diagnostics from an earlier context");
-    require
-      (not Adac.Compilation.Diagnostics.has_error (context_c),
-       "new context started in an error state");
-    require
-      (Adac.Compilation.Sources.file_count (context_c) = 0,
-       "new context inherited source files from an earlier context");
-    require
-      (Adac.Compilation.Semantics.entity_count (context_c) = 0,
-       "new context inherited semantic entities from an earlier context");
-  end;
-
-  declare
-    context : Adac.Compilation.Context :=
-      new_context
-        (resource_limits =>
-           (maximum_source_characters_per_file => 0,
-            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
-            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
-    result : constant Adac.Frontend.Parse_Result :=
-      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
-  begin
-    require
-      (result.status = Adac.Frontend.Parse_Rejected,
-       "zero source character limit did not reject a nonempty file");
-    require
-      (Adac.Compilation.Diagnostics.error_count (context) = 1,
-       "zero source character limit did not record one diagnostic");
-    require
-      (Adac.Compilation.Symbols.symbol_count (context) = 0,
-       "zero source character limit published a symbol");
-    require
-      (Adac.Compilation.Syntax.node_count (context) = 0,
-       "zero source character limit published an AST node");
-  end;
-
-  declare
-    context : Adac.Compilation.Context :=
-      new_context
-        (resource_limits =>
-           (maximum_source_characters_per_file => 20,
-            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
-            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
-    result : constant Adac.Frontend.Parse_Result :=
-      Adac.Frontend.parse_file (context, "tests/line-comments/input.adb");
-  begin
-    require
-      (result.status = Adac.Frontend.Parse_Rejected,
-       "small source character limit did not reject a long line");
-    require
-      (Adac.Compilation.Diagnostics.error_count (context) = 1,
-       "small source character limit did not record one diagnostic");
-    require
-      (Adac.Compilation.Symbols.symbol_count (context) = 1,
-       "small source character limit published unexpected symbols");
-    require
-      (Adac.Compilation.Syntax.node_count (context) = 0,
-       "small source character limit published an AST node");
-  end;
-
-  declare
-    context : Adac.Compilation.Context :=
-      new_context
-        (resource_limits =>
-           (maximum_source_characters_per_file => 41,
-            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
-            maximum_ast_nodes => Adac.Resources.DEFAULT_MAXIMUM_AST_NODES));
-    result : constant Adac.Frontend.Parse_Result :=
-      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
-  begin
-    require
-      (result.status = Adac.Frontend.Parse_Succeeded,
-       "exact source character limit rejected the minimal file");
-    require
-      (Adac.Compilation.Diagnostics.error_count (context) = 0,
-       "exact source character limit recorded a diagnostic");
-    require
-      (Adac.Compilation.Syntax.node_count (context) = 2,
-       "exact source character limit changed AST publication");
-  end;
-
-  declare
-    context : Adac.Compilation.Context :=
-      new_context
-        (resource_limits =>
-           (maximum_source_characters_per_file =>
-              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
-            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
-            maximum_ast_nodes => 0));
-    result : constant Adac.Frontend.Parse_Result :=
-      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
-  begin
-    require
-      (result.status = Adac.Frontend.Parse_Rejected,
-       "zero AST node limit did not reject parsing");
-    require
-      (Adac.Compilation.Diagnostics.error_count (context) = 1,
-       "zero AST node limit did not record one diagnostic");
-    require
-      (Adac.Compilation.Syntax.node_count (context) = 0,
-       "zero AST node limit published a statement node");
-  end;
-
-  declare
-    context : Adac.Compilation.Context :=
-      new_context
-        (resource_limits =>
-           (maximum_source_characters_per_file =>
-              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
-            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
-            maximum_ast_nodes => 0));
-    file_id : constant Adac.Source.Source_File_ID :=
-      Adac.Compilation.Sources.register_file
-        (context, "limit-contract.adb");
-    span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 1, 1),
-       Adac.Source.make_position (file_id, 1, 1));
-    symbol : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context, "main");
-  begin
-    require
-      (rejects_invalid_statement_before_limit (context, span),
-       "AST limit hid an invalid statement kind");
-    require
-      (rejects_empty_unit_before_limit (context, symbol, span),
-       "AST limit hid an empty compilation unit");
-    require
-      (Adac.Compilation.Syntax.node_count (context) = 0,
-       "contract rejection published a node at zero AST limit");
-  end;
-
-  declare
-    context : Adac.Compilation.Context :=
-      new_context
-        (resource_limits =>
-           (maximum_source_characters_per_file =>
-              Adac.Resources.DEFAULT_MAXIMUM_SOURCE_CHARACTERS_PER_FILE,
-            maximum_symbols   => Adac.Resources.DEFAULT_MAXIMUM_SYMBOLS,
-            maximum_ast_nodes => 1));
-    result : constant Adac.Frontend.Parse_Result :=
-      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
-  begin
-    require
-      (result.status = Adac.Frontend.Parse_Rejected,
-       "one-node AST limit did not reject the unit root");
-    require
-      (Adac.Compilation.Diagnostics.error_count (context) = 1,
-       "one-node AST limit did not record one diagnostic");
-    require
-      (Adac.Compilation.Syntax.node_count (context) = 1,
-       "one-node AST limit changed the store after root rejection");
-  end;
-
-  declare
-    context : Adac.Compilation.Context := new_context;
-    file_id : constant Adac.Source.Source_File_ID :=
-      Adac.Compilation.Sources.register_file (context, "matching.adb");
-    unit_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 1, 1),
-       Adac.Source.make_position (file_id, 4, 9));
-    statement_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 3, 3),
-       Adac.Source.make_position (file_id, 3, 7));
-    root : constant Adac.AST.Node_ID :=
-      create_minimal_unit
-        (context, "Main", "main", unit_span, statement_span);
-    analysis : constant Adac.Sema.Analysis_Result :=
-      Adac.Sema.analyze (context, root);
-  begin
-    require
-      (analysis.status = Adac.Sema.Analysis_Succeeded,
-       "semantic analysis rejected matching Ada identifiers");
-    require
-      (Adac.Compilation.Diagnostics.error_count (context) = 0,
-       "successful semantic analysis recorded a diagnostic");
-
-    case analysis.status is
-      when Adac.Sema.Analysis_Rejected =>
-        null;
-
-      when Adac.Sema.Analysis_Succeeded =>
-        require
-          (Adac.Compilation.Semantics.entity_count (context) = 1,
-           "successful semantic analysis did not publish one entity");
-        require
-          (Adac.Compilation.Semantics.kind_of
-             (context, analysis.entity) =
-           Adac.Semantics.Procedure_Body_Entity,
-           "semantic analysis published the wrong entity kind");
-        require
-          (Adac.Compilation.Semantics.declaration
-             (context, analysis.entity) = root,
-           "semantic entity refers to the wrong AST declaration");
-        require
-          (Adac.Compilation.Semantics.symbol (context, analysis.entity) =
-           Adac.Compilation.Syntax.procedure_symbol (context, root),
-           "semantic entity stores the wrong symbol");
-        require
-          (Adac.Compilation.Semantics.entity_span
-             (context, analysis.entity) = unit_span,
-           "semantic entity stores the wrong source span");
-        require
-          (accepts_lowering (context, analysis.entity),
-           "IR builder rejected a valid semantic entity");
+    case scenario is
+      when Adac_Internal_Test_Catalog.Context_And_Identifiers =>
+        Run_Context_And_Identifiers;
+      when Adac_Internal_Test_Catalog.AST_Expressions_And_Statements =>
+        Run_AST_Expressions_And_Statements;
+      when Adac_Internal_Test_Catalog.AST_Declarations_And_Packages =>
+        Run_AST_Declarations_And_Packages;
+      when Adac_Internal_Test_Catalog.Frontend_Rejections =>
+        Run_Frontend_Rejections;
+      when Adac_Internal_Test_Catalog.Bootstrap_Package_Ownership =>
+        Run_Bootstrap_Package_Ownership;
+      when Adac_Internal_Test_Catalog.Bootstrap_Resource_Boundaries =>
+        Run_Bootstrap_Resource_Boundaries;
+      when Adac_Internal_Test_Catalog.Bootstrap_Profile_Frontend =>
+        Run_Bootstrap_Profile_Frontend;
+      when Adac_Internal_Test_Catalog.Parser_And_Resource_Contracts =>
+        Run_Parser_And_Resource_Contracts;
+      when Adac_Internal_Test_Catalog.Semantic_And_Pipeline =>
+        Run_Semantic_And_Pipeline;
+      when Adac_Internal_Test_Catalog.IR_Validation =>
+        Run_IR_Validation;
+      when Adac_Internal_Test_Catalog.Test_Infrastructure =>
+        Run_Test_Infrastructure;
     end case;
-  end;
-
-  declare
-    context : Adac.Compilation.Context := new_context (True);
-    file_id : constant Adac.Source.Source_File_ID :=
-      Adac.Compilation.Sources.register_file (context, "case-sensitive.adb");
-    unit_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 1, 1),
-       Adac.Source.make_position (file_id, 4, 9));
-    statement_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 3, 3),
-       Adac.Source.make_position (file_id, 3, 7));
-    root : constant Adac.AST.Node_ID :=
-      create_minimal_unit
-        (context, "Main", "main", unit_span, statement_span);
-    analysis : constant Adac.Sema.Analysis_Result :=
-      Adac.Sema.analyze (context, root);
-  begin
-    require
-      (analysis.status = Adac.Sema.Analysis_Rejected,
-       "semantic analysis accepted mismatched case-sensitive identifiers");
-    require
-      (Adac.Compilation.Diagnostics.error_count (context) = 1,
-       "rejected semantic analysis did not record one diagnostic");
-    require
-      (Adac.Compilation.Semantics.entity_count (context) = 0,
-       "rejected semantic analysis published an entity");
-  end;
-
-  declare
-    context : Adac.Compilation.Context := new_context;
-    file_id : constant Adac.Source.Source_File_ID :=
-      Adac.Compilation.Sources.register_file (context, "ast-validation.adb");
-    unit_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 1, 1),
-       Adac.Source.make_position (file_id, 4, 9));
-    statement_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 3, 3),
-       Adac.Source.make_position (file_id, 3, 7));
-    outside_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 5, 1),
-       Adac.Source.make_position (file_id, 5, 5));
-    symbol : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (context, "main");
-    valid_root : constant Adac.AST.Node_ID :=
-      create_minimal_unit
-        (context, "main", "main", unit_span, statement_span);
-    invalid_procedure : constant Adac.AST.Node_ID :=
-      create_unchecked_unit
-        (context,
-         Adac.Symbols.INVALID_SYMBOL_ID,
-         symbol,
-         unit_span,
-         statement_span);
-    invalid_end : constant Adac.AST.Node_ID :=
-      create_unchecked_unit
-        (context,
-         symbol,
-         Adac.Symbols.INVALID_SYMBOL_ID,
-         unit_span,
-         statement_span);
-    empty_body : constant Adac.AST.Node_ID :=
-      create_unchecked_unit
-        (context,
-         symbol,
-         symbol,
-         unit_span,
-         statement_span,
-         has_statement => False);
-    invalid_span : constant Adac.AST.Node_ID :=
-      create_unchecked_unit
-        (context,
-         symbol,
-         symbol,
-         Adac.Source.INVALID_SPAN,
-         statement_span);
-    outside_child : constant Adac.AST.Node_ID :=
-      create_unchecked_unit
-        (context, symbol, symbol, unit_span, outside_span);
-  begin
-    declare
-      statements   : Adac.AST.Node_List;
-      before_count : constant Natural :=
-        Adac.Compilation.Syntax.node_count (context);
-      rejected : Boolean := False;
-    begin
-      begin
-        declare
-          root : constant Adac.AST.Node_ID :=
-            Adac.Compilation.Syntax.create_compilation_unit
-              (context, symbol, statements, symbol, unit_span);
-          pragma unreferenced (root);
-        begin
-          null;
-        end;
-      exception
-        when Program_Error =>
-          rejected := True;
-      end;
-
-      require
-        (rejected,
-         "AST constructor accepted an empty statement list");
-      require
-        (Adac.Compilation.Syntax.node_count (context) = before_count,
-         "rejected AST construction published a partial node");
-    end;
-
-    require
-      (accepts_unit (context, valid_root),
-       "AST validator rejected a valid minimal compilation unit");
-    require
-      (not accepts_unit (context, invalid_procedure),
-       "AST validator accepted an invalid procedure symbol");
-    require
-      (not accepts_unit (context, invalid_end),
-       "AST validator accepted an invalid end symbol");
-    require
-      (not accepts_unit (context, empty_body),
-       "AST validator accepted an empty statement list");
-    require
-      (not accepts_unit (context, invalid_span),
-       "AST validator accepted an invalid unit span");
-    require
-      (not accepts_unit (context, outside_child),
-       "AST validator accepted a statement outside its unit span");
-    require
-      (not accepts_unit (context, Adac.AST.INVALID_NODE_ID),
-       "AST validator accepted the invalid node identifier");
-  end;
-
-  declare
-    owner_context   : Adac.Compilation.Context := new_context;
-    foreign_context : Adac.Compilation.Context := new_context;
-    file_id : constant Adac.Source.Source_File_ID :=
-      Adac.Compilation.Sources.register_file
-        (owner_context, "foreign-span.adb");
-    unit_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 1, 1),
-       Adac.Source.make_position (file_id, 4, 9));
-    statement_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (file_id, 3, 3),
-       Adac.Source.make_position (file_id, 3, 7));
-    foreign_file_id : constant Adac.Source.Source_File_ID :=
-      Adac.Compilation.Sources.register_file
-        (foreign_context, "foreign-context.adb");
-    foreign_unit_span : constant Adac.Source.Span := Adac.Source.make_span
-      (Adac.Source.make_position (foreign_file_id, 1, 1),
-       Adac.Source.make_position (foreign_file_id, 4, 9));
-    foreign_statement_span : constant Adac.Source.Span :=
-      Adac.Source.make_span
-        (Adac.Source.make_position (foreign_file_id, 3, 3),
-         Adac.Source.make_position (foreign_file_id, 3, 7));
-    owner_symbol : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (owner_context, "main");
-    foreign_symbol : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (foreign_context, "main");
-    owner_root : constant Adac.AST.Node_ID :=
-      create_minimal_unit
-        (owner_context, "main", "main", unit_span, statement_span);
-    foreign_root : constant Adac.AST.Node_ID :=
-      create_minimal_unit
-        (foreign_context,
-         "main",
-         "main",
-         foreign_unit_span,
-         foreign_statement_span);
-    foreign_symbol_root : constant Adac.AST.Node_ID :=
-      create_unchecked_unit
-        (foreign_context,
-         owner_symbol,
-         owner_symbol,
-         foreign_unit_span,
-         foreign_statement_span);
-    foreign_span_root : constant Adac.AST.Node_ID :=
-      create_unchecked_unit
-        (foreign_context,
-         foreign_symbol,
-         foreign_symbol,
-         unit_span,
-         statement_span);
-    owner_entity : constant Adac.Semantics.Entity_ID :=
-      analyze_entity (owner_context, owner_root);
-    foreign_declaration_entity : constant Adac.Semantics.Entity_ID :=
-      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
-        (foreign_context,
-         owner_root,
-         foreign_symbol,
-         foreign_unit_span);
-    foreign_symbol_entity : constant Adac.Semantics.Entity_ID :=
-      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
-        (foreign_context,
-         foreign_root,
-         owner_symbol,
-         foreign_unit_span);
-    foreign_span_entity : constant Adac.Semantics.Entity_ID :=
-      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
-        (foreign_context,
-         foreign_root,
-         foreign_symbol,
-         unit_span);
-    other_symbol : constant Adac.Symbols.Symbol_ID :=
-      Adac.Compilation.Symbols.intern (foreign_context, "other");
-    mismatched_symbol_entity : constant Adac.Semantics.Entity_ID :=
-      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
-        (foreign_context,
-         foreign_root,
-         other_symbol,
-         foreign_unit_span);
-    mismatched_span_entity : constant Adac.Semantics.Entity_ID :=
-      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
-        (foreign_context,
-         foreign_root,
-         foreign_symbol,
-         foreign_statement_span);
-    invalid_ast_entity : constant Adac.Semantics.Entity_ID :=
-      Adac.Compilation.Semantics.Testing.create_procedure_unchecked
-        (foreign_context,
-         foreign_span_root,
-         foreign_symbol,
-         foreign_unit_span);
-  begin
-    require
-      (owner_root /= foreign_symbol_root,
-       "different AST stores produced the same node identity");
-    require
-      (not accepts_analysis (foreign_context, owner_root),
-       "semantic analysis accepted a foreign node identifier");
-    require
-      (not accepts_analysis (foreign_context, foreign_symbol_root),
-       "semantic analysis accepted a foreign symbol");
-    require
-      (not accepts_analysis (foreign_context, foreign_span_root),
-       "semantic analysis accepted a foreign source span");
-    require
-      (not accepts_lowering (foreign_context, owner_entity),
-       "IR builder accepted a foreign entity identifier");
-    require
-      (not accepts_lowering
-         (foreign_context, foreign_declaration_entity),
-       "IR builder accepted a foreign entity declaration");
-    require
-      (not accepts_lowering (foreign_context, foreign_symbol_entity),
-       "IR builder accepted a foreign entity symbol");
-    require
-      (not accepts_lowering (foreign_context, foreign_span_entity),
-       "IR builder accepted a foreign entity span");
-    require
-      (not accepts_lowering
-         (foreign_context, mismatched_symbol_entity),
-       "IR builder accepted a mismatched entity symbol");
-    require
-      (not accepts_lowering (foreign_context, mismatched_span_entity),
-       "IR builder accepted a mismatched entity span");
-    require
-      (not accepts_lowering (foreign_context, invalid_ast_entity),
-       "IR builder accepted an entity with an invalid AST");
-    require
-      (not accepts_lowering
-         (foreign_context, Adac.Semantics.INVALID_ENTITY_ID),
-       "IR builder accepted the invalid entity identifier");
-  end;
-
-  declare
-    context : Adac.Compilation.Context := new_context;
-    result  : constant Adac.Frontend.Parse_Result :=
-      Adac.Frontend.parse_file (context, "tests/minimal/input.adb");
-  begin
-    require
-      (result.status = Adac.Frontend.Parse_Succeeded,
-       "frontend rejected the valid minimal compilation unit");
-
-    case result.status is
-      when Adac.Frontend.Parse_Rejected =>
-        raise Program_Error with "successful parse has no AST payload";
-
-      when Adac.Frontend.Parse_Succeeded =>
-        require
-          (Adac.Compilation.Symbols.spelling
-             (context,
-              Adac.Compilation.Syntax.procedure_symbol
-                (context, result.root)) =
-           "main",
-           "successful parse returned the wrong AST payload");
-        require
-          (Adac.Compilation.Syntax.node_count (context) = 2,
-           "minimal parse did not create exactly two AST nodes");
-        require
-          (Adac.Compilation.Syntax.kind_of (context, result.root) =
-           Adac.AST.Compilation_Unit_Node,
-           "successful parse returned a non-unit root node");
-        require
-          (Adac.Compilation.Syntax.statement_count
-             (context, result.root) = 1,
-           "minimal parse returned the wrong statement count");
-
-        declare
-          unit_span : constant Adac.Source.Span :=
-            Adac.Compilation.Syntax.node_span (context, result.root);
-          statement : constant Adac.AST.Node_ID :=
-            Adac.Compilation.Syntax.statement_at
-              (context, result.root, 1);
-          statement_span : constant Adac.Source.Span :=
-            Adac.Compilation.Syntax.node_span (context, statement);
-          unit_first : constant Adac.Source.Position :=
-            Adac.Source.first_position (unit_span);
-          unit_last : constant Adac.Source.Position :=
-            Adac.Source.last_position (unit_span);
-          statement_first : constant Adac.Source.Position :=
-            Adac.Source.first_position (statement_span);
-          statement_last : constant Adac.Source.Position :=
-            Adac.Source.last_position (statement_span);
-        begin
-          require
-            (Adac.Compilation.Syntax.kind_of (context, statement) =
-             Adac.AST.Null_Statement_Node,
-             "minimal parse returned the wrong statement kind");
-          require
-            (unit_first.line = 1 and then unit_first.column = 1 and then
-             unit_last.line = 4 and then unit_last.column = 9,
-             "parser returned the wrong compilation-unit span");
-          require
-            (statement_first.line = 3 and then
-             statement_first.column = 3 and then
-             statement_last.line = 3 and then
-             statement_last.column = 7,
-             "parser returned the wrong statement span");
-        end;
-    end case;
-  end;
-
-  declare
-    valid_module : Adac.IR.Module;
-    empty_name   : Adac.IR.Module;
-    empty_code   : Adac.IR.Module;
-  begin
-    valid_module.entry_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-    valid_module.instructions.append
-      (Adac.IR.Instruction'(kind => Adac.IR.Null_Instruction));
-
-    empty_name.instructions.append
-      (Adac.IR.Instruction'(kind => Adac.IR.Null_Instruction));
-
-    empty_code.entry_name :=
-      Ada.Strings.Unbounded.to_unbounded_string ("main");
-
-    require
-      (accepts_module (valid_module),
-       "IR validator rejected a valid minimal module");
-    require
-      (not accepts_module (empty_name),
-       "IR validator accepted an empty entry name");
-    require
-      (not accepts_module (empty_code),
-       "IR validator accepted an empty instruction list");
   end;
 
 end adac_internal_tests;

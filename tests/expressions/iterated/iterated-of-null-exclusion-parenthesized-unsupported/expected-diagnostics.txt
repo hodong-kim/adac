@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-null-exclusion-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (FoR Element : NoT NuLl Item_Ref oF Items => Value)

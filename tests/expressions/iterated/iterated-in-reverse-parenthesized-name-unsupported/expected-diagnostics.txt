@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-reverse-parenthesized-name-unsupported/input.adb:3:10: aggregate expressions are not supported: (for Cursor in reverse Iterators => Value)

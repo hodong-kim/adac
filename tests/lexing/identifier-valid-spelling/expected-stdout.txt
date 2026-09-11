@@ -1,0 +1,8 @@
+adac: parsing tests/lexing/identifier-valid-spelling/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry Main_2
+adac: ir null
+adac: backend ok
+adac: diagnostics 0 error(s)

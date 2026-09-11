@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-closing-missing-semicolon/input.adb:2:1: expected TOK_SEMICOLON, got TOK_EOF 

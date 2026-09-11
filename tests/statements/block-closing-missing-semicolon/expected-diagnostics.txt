@@ -1,0 +1,1 @@
+adac: error: tests/statements/block-closing-missing-semicolon/input.adb:18:5: expected TOK_SEMICOLON, got TOK_IDENTIFIER Next

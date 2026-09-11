@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/parenthesized-expression-logical-unsupported/input.adb:3:10: operator expressions are not supported: (Cold and Sunny) or Warm

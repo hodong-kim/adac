@@ -1,0 +1,1 @@
+adac: error: tests/lexing/identifier-leading-underscore/input.adb:1:11: invalid identifier _main

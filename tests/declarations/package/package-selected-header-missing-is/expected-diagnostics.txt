@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-selected-header-missing-is/input.adb:1:22: expected TOK_IS, got TOK_BEGIN begin

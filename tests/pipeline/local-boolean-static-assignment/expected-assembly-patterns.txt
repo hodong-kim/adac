@@ -1,0 +1,6 @@
+# Static Boolean assignment lowers through Boolean constants and stores.
++ subq $16, %rsp
++ movl $1, -4(%rbp)
++ movl $0, -4(%rbp)
++ leave
++ ret

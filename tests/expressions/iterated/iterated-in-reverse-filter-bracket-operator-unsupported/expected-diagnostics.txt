@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-reverse-filter-bracket-operator-unsupported/input.adb:3:10: operator expressions are not supported: [for Index in reverse 1 .. Limit when Ready and Enabled => Value]

@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-real-number-arithmetic-resource-limit/input.adb:2:3: universal real resource limit exceeded in local number declaration

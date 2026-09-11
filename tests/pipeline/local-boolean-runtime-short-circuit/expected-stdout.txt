@@ -1,0 +1,34 @@
+adac: parsing tests/pipeline/local-boolean-runtime-short-circuit/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local Left bool
+adac: ir local Right bool
+adac: ir local Target bool
+adac: ir value 1 bool false
+adac: ir value 2 bool true
+adac: ir value 3 bool local 1
+adac: ir value 4 bool local 2
+adac: ir value 5 bool and then values 3 4
+adac: ir value 6 bool true
+adac: ir value 7 bool local 1
+adac: ir value 8 bool local 2
+adac: ir value 9 bool and then values 7 8
+adac: ir value 10 bool local 3
+adac: ir value 11 bool local 1
+adac: ir value 12 bool or else values 10 11
+adac: ir value 13 bool false
+adac: ir value 14 bool local 2
+adac: ir value 15 bool local 1
+adac: ir value 16 bool or else values 14 15
+adac: ir store local 1 value 1
+adac: ir store local 2 value 2
+adac: ir store local 3 value 5
+adac: ir store local 1 value 6
+adac: ir store local 3 value 9
+adac: ir store local 3 value 12
+adac: ir store local 2 value 13
+adac: ir store local 3 value 16
+adac: backend ok
+adac: diagnostics 0 error(s)

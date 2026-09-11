@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-integer-number-use-before-declaration/input.adb:2:3: local number declaration is not a supported static numeric expression

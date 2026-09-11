@@ -1,0 +1,12 @@
+adac: parsing tests/pipeline/local-boolean-static-assignment/input.adb
+adac: parse ok
+adac: sema ok
+adac: ir ok
+adac: ir entry main
+adac: ir local Flag bool
+adac: ir value 1 bool true
+adac: ir value 2 bool false
+adac: ir store local 1 value 1
+adac: ir store local 1 value 2
+adac: backend ok
+adac: diagnostics 0 error(s)

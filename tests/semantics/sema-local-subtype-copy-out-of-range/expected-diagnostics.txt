@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-subtype-copy-out-of-range/input.adb:6:3: assignment source value is outside target subtype range

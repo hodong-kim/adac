@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-named-missing-value/input.adb:3:42: expected expression primary, got TOK_RIGHT_PARENTHESIS )

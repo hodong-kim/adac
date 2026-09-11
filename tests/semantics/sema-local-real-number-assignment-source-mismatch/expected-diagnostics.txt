@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-real-number-assignment-source-mismatch/input.adb:5:3: assignment source type does not match target

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/function-body-parenthesized-string-actual-current/input.adb:1:1: package bodies are not semantically supported

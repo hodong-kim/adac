@@ -1,0 +1,1 @@
+adac: error: tests/declarations/package/package-closing-trailing-source/input.adb:3:1: expected TOK_EOF, got TOK_IDENTIFIER Trailing

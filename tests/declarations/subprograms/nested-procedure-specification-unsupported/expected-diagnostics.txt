@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/nested-procedure-specification-unsupported/input.adb:7:5: nested procedure statements are not supported

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-access-null-exclusion-bracket-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [for Item : not null access Ref_Type in reverse Iterators when Ready => Value]

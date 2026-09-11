@@ -1,0 +1,1 @@
+adac: error: tests/statements/if-statement-unsupported/input.adb:4:5: if statement sequences are not supported

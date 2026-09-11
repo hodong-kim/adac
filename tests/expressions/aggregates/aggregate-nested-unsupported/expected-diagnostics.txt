@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-nested-unsupported/input.adb:3:10: aggregate expressions are not supported: ((Alpha, Beta), Gamma)

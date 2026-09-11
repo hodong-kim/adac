@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/aggregate-missing-value/input.adb:3:18: expected expression primary, got TOK_RIGHT_PARENTHESIS )

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/null-literal-unsupported/input.adb:3:10: null literal expressions are not supported: null

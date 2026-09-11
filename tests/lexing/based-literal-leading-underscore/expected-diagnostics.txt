@@ -1,0 +1,1 @@
+adac: error: tests/lexing/based-literal-leading-underscore/input.adb:3:10: invalid numeric literal 16#_FF#

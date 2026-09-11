@@ -1,7 +1,3 @@
 /build/
 /bin/
 /obj/
-/tests/**/actual.txt
-/tests/**/*.s
-/tests/**/main
-/tests-style/**/actual.txt

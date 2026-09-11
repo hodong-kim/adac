@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/parenthesized-expression-unsupported/input.adb:3:10: parenthesized expressions are not supported: (Alpha)

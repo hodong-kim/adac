@@ -1,0 +1,1 @@
+adac: error: tests/declarations/objects/nested-variable-object-initializer-current/input.adb:5:5: nested procedure statements are not supported

@@ -11,6 +11,7 @@ with Adac.Resources;
 with Adac.Semantics;
 with Adac.Source;
 with Adac.Symbols;
+with Adac.Types;
 
 package Adac.Compilation is
 
@@ -45,6 +46,7 @@ private
     source_registry  : Adac.Source.Registry;
     semantic_store   : Adac.Semantics.Store;
     symbol_store     : Adac.Symbols.Store;
+    type_store       : Adac.Types.Store;
   end record;
 
   procedure validate (self : Context);

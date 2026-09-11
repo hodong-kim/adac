@@ -1,0 +1,1 @@
+adac: error: tests/statements/function-body-named-exit-unsupported/input.adb:5:12: named exit statements are not supported

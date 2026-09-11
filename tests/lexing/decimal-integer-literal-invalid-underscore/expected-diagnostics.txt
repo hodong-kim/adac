@@ -1,0 +1,1 @@
+adac: error: tests/lexing/decimal-integer-literal-invalid-underscore/input.adb:3:10: invalid numeric literal 123__456

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-association-choice-list-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [for Index in 1 | 3 .. Limit => Value]

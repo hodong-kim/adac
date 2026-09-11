@@ -1,0 +1,1 @@
+tests/cli/missing-input/does-not-exist.adb

@@ -1,0 +1,47 @@
+# Boolean ordering follows False < True using backend-owned 0/1 coding.
++ subq $16, %rsp
++ movl $0, -4(%rbp)
++ movl $1, -8(%rbp)
++ movl -4(%rbp), %eax
++ cmpl -8(%rbp), %eax
++ setb %al
++ movzbl %al, %eax
++ movl %eax, -12(%rbp)
++ movl -4(%rbp), %eax
++ cmpl -8(%rbp), %eax
++ setbe %al
++ movzbl %al, %eax
++ movl %eax, -12(%rbp)
++ movl -4(%rbp), %eax
++ cmpl -8(%rbp), %eax
++ seta %al
++ movzbl %al, %eax
++ movl %eax, -12(%rbp)
++ movl -4(%rbp), %eax
++ cmpl -8(%rbp), %eax
++ setae %al
++ movzbl %al, %eax
++ movl %eax, -12(%rbp)
++ movl $1, -4(%rbp)
++ movl -4(%rbp), %eax
++ cmpl -8(%rbp), %eax
++ setb %al
++ movzbl %al, %eax
++ movl %eax, -12(%rbp)
++ movl -4(%rbp), %eax
++ cmpl -8(%rbp), %eax
++ setbe %al
++ movzbl %al, %eax
++ movl %eax, -12(%rbp)
++ movl -4(%rbp), %eax
++ cmpl -8(%rbp), %eax
++ seta %al
++ movzbl %al, %eax
++ movl %eax, -12(%rbp)
++ movl -4(%rbp), %eax
++ cmpl -8(%rbp), %eax
++ setae %al
++ movzbl %al, %eax
++ movl %eax, -12(%rbp)
++ leave
++ ret

@@ -1,0 +1,1 @@
+adac: error: tests/declarations/objects/nested-constant-object-missing-colon/input.adb:3:10: expected TOK_COLON, got TOK_CONSTANT constant

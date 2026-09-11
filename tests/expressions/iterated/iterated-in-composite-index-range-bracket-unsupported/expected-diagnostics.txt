@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-composite-index-range-bracket-unsupported/input.adb:3:10: bracket aggregate expressions are not supported: [for Element : Item_Type(Low .. High) in reverse Items when Ready => Value]

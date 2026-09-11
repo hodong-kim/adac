@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-composite-constrained-discrete-missing-range/input.adb:3:55: expected TOK_DOUBLE_DOT, got TOK_RIGHT_PARENTHESIS )

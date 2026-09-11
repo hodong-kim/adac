@@ -1,0 +1,1 @@
+adac: error: tests/statements/if-statement-missing-end-if-keyword/input.adb:7:6: expected TOK_IF, got TOK_SEMICOLON ;

@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-boolean-runtime-short-circuit/input.adb:5:3: Boolean assignment expression is not semantically supported

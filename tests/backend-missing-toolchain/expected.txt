@@ -1,8 +1,0 @@
-adac: parsing tests/backend-missing-toolchain/input.adb
-adac: parse ok
-adac: sema ok
-adac: ir ok
-adac: ir entry main
-adac: ir null
-adac: error: native toolchain executable not found: adac-native-toolchain-does-not-exist
-adac: diagnostics 1 error(s)

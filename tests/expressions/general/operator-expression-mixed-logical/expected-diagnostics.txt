@@ -1,0 +1,1 @@
+adac: error: tests/expressions/general/operator-expression-mixed-logical/input.adb:3:25: expected expression end, got TOK_OR or

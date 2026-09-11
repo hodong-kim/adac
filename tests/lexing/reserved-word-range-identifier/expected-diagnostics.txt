@@ -1,0 +1,1 @@
+adac: error: tests/lexing/reserved-word-range-identifier/input.adb:1:11: expected TOK_IDENTIFIER, got TOK_RANGE range

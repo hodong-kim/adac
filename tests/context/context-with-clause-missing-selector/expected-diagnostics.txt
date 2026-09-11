@@ -1,0 +1,1 @@
+adac: error: tests/context/context-with-clause-missing-selector/input.adb:1:10: expected TOK_IDENTIFIER, got TOK_SEMICOLON ;

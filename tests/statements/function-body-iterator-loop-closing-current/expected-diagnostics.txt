@@ -1,0 +1,1 @@
+adac: error: tests/statements/function-body-iterator-loop-closing-current/input.adb:7:5: function body statement is not supported

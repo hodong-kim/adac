@@ -1,0 +1,1 @@
+adac: error: tests/names/selected-name-character-selector-unsupported/input.adb:3:10: name expressions are not supported: Colors.'R'

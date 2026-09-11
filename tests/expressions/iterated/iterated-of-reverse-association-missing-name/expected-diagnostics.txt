@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-of-reverse-association-missing-name/input.adb:3:34: expected iterator name, got TOK_ARROW =>

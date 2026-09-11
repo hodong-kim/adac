@@ -1,0 +1,1 @@
+adac: error: tests/lexing/string-literal-embedded-quote-unsupported/input.adb:3:10: string literal expressions are not supported: """Ada"""

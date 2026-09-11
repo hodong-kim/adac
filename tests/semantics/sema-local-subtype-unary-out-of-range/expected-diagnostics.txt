@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-subtype-unary-out-of-range/input.adb:2:3: local subtype range bound is outside base type range

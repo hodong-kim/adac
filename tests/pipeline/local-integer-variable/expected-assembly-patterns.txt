@@ -1,0 +1,7 @@
+# One local allocates a frame but receives no implicit initialization.
++ pushq %rbp
++ movq %rsp, %rbp
++ subq $16, %rsp
+! movl
++ leave
++ ret

@@ -1,0 +1,1 @@
+adac: error: tests/expressions/aggregates/delta-aggregate-unsupported/input.adb:3:10: delta aggregate expressions are not supported: (Original with DeLtA Left => New_Left, Right => New_Right)

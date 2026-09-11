@@ -1,0 +1,1 @@
+adac: error: tests/expressions/iterated/iterated-in-subtype-mark-parenthesized-unsupported/input.adb:3:10: aggregate expressions are not supported: (FoR Cursor : Cursor_Type iN Iterators WhEn Ready => Value)

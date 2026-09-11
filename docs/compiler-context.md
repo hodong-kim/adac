@@ -37,8 +37,10 @@ unambiguous.
 ## Current Implementation
 
 The context currently owns language options, immutable resource limits,
-diagnostic state, a source file registry, an interned symbol store, and an
-append-only AST store and semantic entity store.
+diagnostic state, a source file registry, an interned symbol store, an
+append-only AST store and semantic entity store, including procedure-owned
+lexical-scope bindings, and the context-owned semantic type store defined by
+`type-model.md`.
 
 ```text
 Compilation.Context
@@ -49,6 +51,7 @@ Compilation.Context
   symbol store
   AST store
   semantic entity store
+  semantic type store
 ```
 
 The driver creates one context for each compilation and keeps it alive while the
@@ -89,7 +92,6 @@ The following state remains outside the context:
 
 - source text and open source file handles;
 - transient lexer state and per-file source-character usage;
-- type information;
 - IR storage;
 - target configuration;
 - cancellation state;
@@ -111,11 +113,12 @@ Current context-owned state includes:
 - source file registry and source file identifiers;
 - interned identifier spellings and symbol identifiers;
 - append-only AST storage and node identifiers;
-- append-only semantic entity storage and entity identifiers.
+- append-only semantic entity storage, entity identifiers, and procedure-owned
+  lexical-scope bindings;
+- append-only semantic type storage and type identifiers.
 
 Planned context-owned state includes:
 
-- type information;
 - IR storage;
 - target options;
 - cancellation state;
@@ -242,11 +245,11 @@ compilation must preserve deterministic externally visible ordering.
 
 ## Stable Identifiers
 
-`Source_File_ID`, `Symbol_ID`, `Node_ID`, and `Entity_ID` are the stable
-identifiers currently implemented by the compiler. Each identifier belongs to
-one context-owned store and contains a deterministic one-based index plus a
-runtime ownership marker. The marker detects cross-context use but is not part
-of serialized or externally visible identity.
+`Source_File_ID`, `Symbol_ID`, `Node_ID`, `Entity_ID`, and `Type_ID` are the
+stable identifiers currently implemented by the compiler. Each identifier
+belongs to one context-owned store and contains a deterministic one-based index
+plus a runtime ownership marker. The marker detects cross-context use but is not
+part of serialized or externally visible identity.
 
 The source registry preserves the exact path spelling supplied to the frontend.
 Registering the same exact path again in one context returns the existing ID.
@@ -264,14 +267,10 @@ and span containment, while context-aware validation rejects foreign node,
 symbol, and source identifiers. The detailed contracts are defined in
 `ast-model.md` and `source-spans.md`.
 
-The remaining planned identifier kind is:
-
-```text
-Type_ID
-```
-
 The common identifier rules, ownership checks, determinism requirements, and
-serialization boundary are defined in `compiler-identifiers.md`.
+serialization boundary are defined in `compiler-identifiers.md`. New identifier
+categories shall be added only with the context-owned store and validators that
+make their ownership explicit.
 
 ## Result Types
 
@@ -316,9 +315,10 @@ analysis begins. It leaves name matching to semantic analysis because that rule
 depends on language options. Its contract and extension rules are defined in
 `ast-model.md`.
 
-The initial IR validator rejects a missing entry name and an empty instruction
-list before a module leaves the builder or enters the backend. Its contract and
-extension rules are defined in `ir-validation.md`.
+The IR validator rejects a missing entry name, an empty instruction list,
+malformed scalar constants, and invalid local-store references/operands before a
+module leaves the builder or enters the backend. Its contract and extension rules
+are defined in `ir-validation.md`.
 
 Planned validators include:
 
@@ -337,14 +337,21 @@ inputs.
 
 Each context owns an immutable resource-limit policy. The current implementation
 enforces a per-file normalized source-character budget before the lexer reads
-each character, a distinct-symbol budget before symbol publication, and an AST
-node budget before node publication. The parser converts each exhaustion signal
-into a controlled source diagnostic. The detailed contract is defined in
-`resource-limits.md`.
+each character, an expression-nesting budget before recursive parsing entered by
+parenthesized expressions, parenthesized or bracket aggregate primaries, and
+qualified operands, a profile-nesting budget before entering
+access-to-subprogram profiles, a distinct-symbol budget before symbol
+publication, and an AST node budget before node publication. The parser converts
+each exhaustion condition into a controlled source diagnostic. The detailed
+contract is defined in `resource-limits.md`.
 
 Future limits may cover aggregate raw source bytes, token count, semantic
-entities, IR objects, diagnostics, nesting depth, and backend temporary storage.
-Cancellation is not implemented yet.
+entities, IR objects, diagnostics, additional grammar-specific nesting, and
+backend temporary storage.
+Cancellation is not implemented yet. Milestone 1 established the ownership,
+cleanup, and output-publication contract for cancellation. Cancellation state
+and safe-point checks are introduced only when the affected stage contracts and
+tests exist.
 
 Cancellation shall be checked only at documented safe points. A cancelled
 compilation shall release owned resources and shall not publish partial output.
@@ -354,13 +361,23 @@ compilation shall release owned resources and shall not publish partial output.
 State shall move into the context in small, independently testable changes.
 The minimal context, diagnostic-state migration, source registry, initial stage
 result types, interned symbols, context-owned AST arena and `Node_ID`, initial
-AST source spans, context-owned procedure entities and `Entity_ID`, initial AST,
-semantic, and IR validators, the streaming source-character budget, the symbol
-budget, and the AST node budget are complete. The next planned sequence is:
+AST source spans, context-owned semantic entities and `Entity_ID`, context-owned
+semantic types and `Type_ID`, initial AST, semantic, and IR validators, the
+streaming source-character budget, the symbol budget, and the AST node budget
+are complete.
 
-1. extend AST and IR validation with each new representation;
+Further state shall move into context only when roadmap work introduces the
+corresponding representation and tests. Milestone 3 semantic work now retains the
+first procedure-owned lexical-scope bindings inside the semantic entity store; it
+does not introduce a second context store or scope identifier. Context-related
+work continues with later semantic and pipeline slices:
+
+1. extend AST, semantic, scope, type, and IR validation with each new
+   representation;
 2. expand in-process tests as additional context-owned state is introduced;
-3. add cancellation and additional resource accounting when their contracts
+3. extend the context-owned type store as later scalar and composite types are
+   integrated;
+4. add cancellation and additional resource accounting when their contracts
    are defined.
 
 The sequence may change when implementation constraints require it, but each

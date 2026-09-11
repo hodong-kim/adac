@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subunits/function-body-unsupported/input.adb:2:1: subunit proper bodies outside current package/procedure subset are not supported

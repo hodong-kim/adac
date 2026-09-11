@@ -1,0 +1,1 @@
+adac: error: tests/semantics/sema-local-unsupported-initializer/input.adb:3:3: local object initializer is not semantically supported

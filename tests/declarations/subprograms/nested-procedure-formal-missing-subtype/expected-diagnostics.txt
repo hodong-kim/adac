@@ -1,0 +1,1 @@
+adac: error: tests/declarations/subprograms/nested-procedure-formal-missing-subtype/input.adb:2:27: expected TOK_IDENTIFIER, got TOK_RIGHT_PARENTHESIS )
